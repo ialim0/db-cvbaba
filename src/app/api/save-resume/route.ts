@@ -6,29 +6,31 @@ import path from 'path';
 
 // Define interfaces matching the frontend
 interface ContactInfo {
-  email: string;
+  email?: string;
   phone?: string;
   linkedin?: string;
 }
 
 interface Experience {
-  title: string;
-  company: string;
-  start_date: string;
-  end_date: string;
-  achievements: string[];
+  title?: string;
+  company?: string;
+  start_date?: string;
+  end_date?: string;
+  achievements?: string[];
 }
 
 interface Education {
-  degree: string;
-  institution: string;
-  graduation_date: string;
+  degree?: string;
+  institution?: string;
+  graduation_date?: string;
 }
 
 interface UserInfo {
-  name: string;
-  contact: ContactInfo;
-  summary: string;
+  task?: string;
+  page_limit?: number;
+  name?: string;
+  contact?: ContactInfo;
+  summary?: string;
   experience?: Experience[];
   education?: Education[];
   skills?: string[];
@@ -38,91 +40,102 @@ interface UserInfo {
 }
 
 interface FormData {
-  style: 'Minimalist' | 'Modern' | 'Creative';
-  user_info: UserInfo;
-  output: string;
+  style?: 'Minimalist' | 'Modern' | 'Creative';
+  user_info?: UserInfo;
+  output?: string;
 }
+
+// Utility function to safely access nested properties
+const getNestedProperty = (obj: any, path: string[], defaultValue: any = 'N/A') => {
+  return path.reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : defaultValue), obj);
+};
 
 export async function POST(req: Request) {
   try {
     const { style, user_info, output } = (await req.json()) as FormData;
 
-    // Basic validation
-    if (!style || !user_info || !output) {
+    // Basic validation for style and output
+    if (!style || !['Minimalist', 'Modern', 'Creative'].includes(style)) {
       return NextResponse.json(
-        { message: 'Invalid data structure: Missing style, user_info, or output fields.' },
+        { message: 'Invalid data structure: Missing or invalid style field.' },
         { status: 400 }
       );
     }
 
-    // Validate required fields in user_info
-    const { name, contact, summary } = user_info;
-
-    if (!name || !contact?.email || !summary) {
+    if (!output || typeof output !== 'string') {
       return NextResponse.json(
-        { message: 'Missing required fields: name, contact.email, or summary.' },
+        { message: 'Invalid data structure: Missing or invalid output field.' },
         { status: 400 }
       );
     }
 
-    // Optional field type validations
-    if (user_info.photo_url && typeof user_info.photo_url !== 'string') {
+    // Validate that user_info exists
+    if (!user_info) {
       return NextResponse.json(
-        { message: 'Invalid type for photo_url. It must be a string.' },
+        { message: 'Invalid data structure: Missing user_info field.' },
         { status: 400 }
       );
     }
 
-    if (user_info.job_description && typeof user_info.job_description !== 'string') {
+    // Validate Task
+    if (!user_info.task || typeof user_info.task !== 'string') {
       return NextResponse.json(
-        { message: 'Invalid type for job_description. It must be a string.' },
+        { message: 'Invalid data structure: Missing or invalid task field within user_info.' },
         { status: 400 }
       );
     }
 
-    if (user_info.user_prompt && typeof user_info.user_prompt !== 'string') {
+    // Validate Page Limit
+    if (
+      user_info.page_limit === undefined ||
+      typeof user_info.page_limit !== 'number' ||
+      user_info.page_limit < 1
+    ) {
       return NextResponse.json(
-        { message: 'Invalid type for user_prompt. It must be a string.' },
+        { message: 'Invalid data structure: Missing or invalid page_limit field within user_info.' },
         { status: 400 }
       );
     }
 
-    // Define the system prompt
-    const systemPrompt = `You are an AI assistant specialized in generating professional resumes in LaTeX format. Your task is to create a well-structured, aesthetically pleasing, and comprehensive resume based on the provided user information. Ensure that the resume adheres to the specified style and includes only the relevant sections as per the user's input.`;
+    // Further validations for optional fields can be added here
 
-    // Construct textual prompt for fine-tuning
-    let textualPrompt = `${systemPrompt}
-
-Task: Generate a professional resume LaTeX template
+    // Start constructing the textual prompt using user-provided task and page_limit
+    let textualPrompt = `Task: ${user_info.task}
 Constraints:
 - Style: ${style}
-- Page Limit: 1
-- Sections: header, summary, experience, education, skills`;
-
-    // Add optional sections if provided
-    if (user_info.job_description) {
-      textualPrompt += `, job_description`;
-    }
+- Page Limit: ${user_info.page_limit}`;
 
     textualPrompt += `
 
-User Profile:
-Name: ${name}
-Email: ${contact.email}
-Phone: ${contact.phone || 'N/A'}
-LinkedIn: ${contact.linkedin ? `https://${contact.linkedin}` : 'N/A'}
-Summary: ${summary}`;
+User Profile:`;
 
+    if (user_info.name) {
+      textualPrompt += `
+Name: ${user_info.name}`;
+    }
+    if (user_info.contact) {
+      const email = getNestedProperty(user_info, ['contact', 'email']);
+      const phone = getNestedProperty(user_info, ['contact', 'phone']);
+      const linkedin = getNestedProperty(user_info, ['contact', 'linkedin']);
+      textualPrompt += `
+Email: ${email}
+Phone: ${phone}
+LinkedIn: ${linkedin !== 'N/A' ? `https://${linkedin}` : 'N/A'}`;
+    }
+    if (user_info.summary) {
+      textualPrompt += `
+Summary: ${user_info.summary}`;
+    }
     if (user_info.user_prompt) {
       textualPrompt += `
-User Prompt: ${user_info.user_prompt}`;
-    }
 
+User Prompt:
+${user_info.user_prompt}`;
+    }
     if (user_info.photo_url) {
       textualPrompt += `
 Photo URL: ${user_info.photo_url}`;
     }
-
     if (user_info.job_description) {
       textualPrompt += `
 Job Description: ${user_info.job_description}`;
@@ -136,30 +149,34 @@ ${
         ? user_info.experience
             .map(
               (exp: Experience) =>
-                `${exp.title} at ${exp.company} (${exp.start_date} - ${exp.end_date})
-- ${exp.achievements.join('\n- ')}`
+                `${exp.title || 'N/A'} at ${exp.company || 'N/A'} (${exp.start_date || 'N/A'} - ${
+                  exp.end_date || 'N/A'
+                })
+- ${exp.achievements && exp.achievements.length > 0 ? exp.achievements.join('\n- ') : 'N/A'}`
             )
             .join('\n\n')
         : 'N/A'
-    }
+}
 
 Education:
 ${
       user_info.education && user_info.education.length > 0
         ? user_info.education
-            .map((edu: Education) => `${edu.degree}, ${edu.institution}, ${edu.graduation_date}`)
+            .map(
+              (edu: Education) =>
+                `${edu.degree || 'N/A'}, ${edu.institution || 'N/A'}, ${edu.graduation_date || 'N/A'}`
+            )
             .join('\n')
         : 'N/A'
-    }
+}
 
 Skills:
 ${
       user_info.skills && user_info.skills.length > 0
         ? user_info.skills.join(', ')
         : 'N/A'
-    }
-
-Generate the LaTeX code for the resume based on the above information.`;
+}
+`;
 
     const jsonlData = {
       prompt: textualPrompt.trim(),

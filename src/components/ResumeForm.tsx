@@ -6,34 +6,37 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input'; // Assuming you have an Input component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Define interfaces for form data
 interface ContactInfo {
-  email: string;
+  email?: string;
   phone?: string;
   linkedin?: string;
 }
 
 interface Experience {
-  title: string;
-  company: string;
-  start_date: string;
-  end_date: string;
-  achievements: string[];
+  title?: string;
+  company?: string;
+  start_date?: string;
+  end_date?: string;
+  achievements?: string[];
 }
 
 interface Education {
-  degree: string;
-  institution: string;
-  graduation_date: string;
+  degree?: string;
+  institution?: string;
+  graduation_date?: string;
 }
 
 interface UserInfo {
-  name: string;
-  contact: ContactInfo;
-  summary: string;
+  task?: string;
+  page_limit?: number;
+  name?: string;
+  contact?: ContactInfo;
+  summary?: string;
   experience?: Experience[];
   education?: Education[];
   skills?: string[];
@@ -43,45 +46,47 @@ interface UserInfo {
 }
 
 interface FormData {
-  style: 'Minimalist' | 'Modern' | 'Creative' | '';
-  user_info: string; // JSON string
+  style?: 'Minimalist' | 'Modern' | 'Creative' | '';
+  user_info: string; // JSON string including task and page_limit
   output: string;
 }
 
 const initialFormData: FormData = {
-  style: '',
+  style: 'Minimalist', // Set default style to 'Minimalist'
   user_info: `{
-  "name": "John Doe",
-  "contact": {
-    "email": "john@example.com",
-    "phone": "123-456-7890",
-    "linkedin": "linkedin.com/in/johndoe"
-  },
-  "summary": "Senior Software Engineer with 7+ years of experience in full-stack development",
-  "experience": [
-    {
-      "title": "Senior Software Engineer",
-      "company": "Tech Innovations Inc.",
-      "start_date": "2020-01",
-      "end_date": "Present",
-      "achievements": [
-        "Led development of scalable microservices architecture",
-        "Reduced system latency by 40% through optimized algorithms"
-      ]
-    }
-  ],
-  "education": [
-    {
-      "degree": "M.S. Computer Science",
-      "institution": "Stanford University",
-      "graduation_date": "2019-06"
-    }
-  ],
-  "skills": ["Python", "TypeScript", "React", "Node.js", "Docker", "Kubernetes"],
-  "user_prompt": "", // Optional: Your prompt to the employer
-  "photo_url": "", // Optional: Provide a URL to your photo
-  "job_description": "" // Optional: Describe the job you're applying for
-}`,
+    "task": "Generate a professional resume LaTeX template",
+    "page_limit": 1,
+    "name": "John Doe",
+    "contact": {
+      "email": "john@example.com",
+      "phone": "123-456-7890",
+      "linkedin": "linkedin.com/in/johndoe"
+    },
+    "summary": "Senior Software Engineer with 7+ years of experience in full-stack development",
+    "experience": [
+      {
+        "title": "Senior Software Engineer",
+        "company": "Tech Innovations Inc.",
+        "start_date": "2020-01",
+        "end_date": "Present",
+        "achievements": [
+          "Led development of scalable microservices architecture",
+          "Reduced system latency by 40% through optimized algorithms"
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "M.S. Computer Science",
+        "institution": "Stanford University",
+        "graduation_date": "2019-06"
+      }
+    ],
+    "skills": ["Python", "TypeScript", "React", "Node.js", "Docker", "Kubernetes"],
+    "user_prompt": "",
+    "photo_url": "",
+    "job_description": ""
+  }`,
   output: `\\documentclass{article}
 \\usepackage{graphicx}
 \\usepackage[margin=1in]{geometry}
@@ -89,16 +94,8 @@ const initialFormData: FormData = {
 \\begin{document}
 
 \\begin{center}
-    % If photo_url is provided, include the photo
-    % Uncomment the following line and provide the correct path to the photo
-    % \\includegraphics[width=2cm]{path/to/photo.jpg} \\\\
     \\textbf{John Doe}
 \\end{center}
-
-% If user_prompt is provided, include the User Prompt section
-% Uncomment the following lines to include User Prompt
-% \\section*{User Prompt}
-% I am looking to apply for a senior software engineering position.
 
 \\section*{Contact}
 Email: john@example.com \\\\
@@ -107,11 +104,6 @@ LinkedIn: \\href{https://linkedin.com/in/johndoe}{linkedin.com/in/johndoe}
 
 \\section*{Summary}
 Senior Software Engineer with 7+ years of experience in full-stack development.
-
-% If job_description is provided, include the Job Description section
-% Uncomment the following lines to include Job Description
-% \\section*{Job Description}
-% Responsible for developing scalable web applications and leading the engineering team.
 
 \\section*{Experience}
 \\textbf{Senior Software Engineer} \\\\
@@ -143,31 +135,36 @@ export default function ResumeForm() {
     setSuccess(null);
 
     try {
+      // Parse and validate User Info JSON
+      let parsedUserInfo: UserInfo = {};
+      if (formData.user_info.trim()) {
+        try {
+          parsedUserInfo = JSON.parse(formData.user_info);
+        } catch {
+          throw new Error('Invalid JSON format in User Information. Please check your input.');
+        }
+      }
+
+      // Validate Task
+      if (!parsedUserInfo.task || typeof parsedUserInfo.task !== 'string') {
+        throw new Error('Please provide a valid task description within the User Information.');
+      }
+
+      // Validate Page Limit
+      if (
+        parsedUserInfo.page_limit === undefined ||
+        typeof parsedUserInfo.page_limit !== 'number' ||
+        parsedUserInfo.page_limit < 1
+      ) {
+        throw new Error('Please provide a valid page limit (minimum 1) within the User Information.');
+      }
+
       // Validate Resume Style
       if (!formData.style) {
         throw new Error('Please select a resume style.');
       }
 
-      // Parse and validate User Info JSON
-      let parsedUserInfo: UserInfo;
-      try {
-        parsedUserInfo = JSON.parse(formData.user_info);
-      } catch {
-        throw new Error('Invalid JSON format in User Information. Please check your input.');
-      }
-
-      // Validate required fields in User Info
-      if (
-        !parsedUserInfo.name ||
-        !parsedUserInfo.contact?.email ||
-        !parsedUserInfo.summary
-      ) {
-        throw new Error(
-          'Missing required fields in User Information. Please include name, contact.email, and summary.'
-        );
-      }
-
-      // Optionally validate new fields if provided
+      // Optionally validate other fields
       if (parsedUserInfo.photo_url && typeof parsedUserInfo.photo_url !== 'string') {
         throw new Error('photo_url must be a string.');
       }
@@ -228,7 +225,7 @@ export default function ResumeForm() {
             }))
           }
           required
-          value={formData.style}
+          value={formData.style} // This will now be 'Minimalist' by default
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a style" />
@@ -250,8 +247,10 @@ export default function ResumeForm() {
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, user_info: e.target.value }))
           }
-          rows={25}
+          rows={30}
           placeholder={`{
+  "task": "Generate a professional resume LaTeX template",
+  "page_limit": 1,
   "name": "John Doe",
   "contact": {
     "email": "john@example.com",
@@ -280,14 +279,14 @@ export default function ResumeForm() {
   ],
   "skills": ["Python", "TypeScript", "React", "Node.js", "Docker", "Kubernetes"],
   "user_prompt": "",
-  "photo_url": "", 
-  "job_description": "" 
+  "photo_url": "",
+  "job_description": ""
 }`}
-          required
           aria-describedby="user-info-format"
         />
         <p id="user-info-format" className="text-sm text-muted-foreground mt-2">
           Provide a comprehensive JSON profile. Fields like "user_prompt", "photo_url", and "job_description" are optional.
+          Additionally, include "task" and "page_limit" within the JSON.
         </p>
       </div>
 
@@ -308,16 +307,8 @@ export default function ResumeForm() {
 \\begin{document}
 
 \\begin{center}
-    % If photo_url is provided, include the photo
-    % Uncomment the following line and provide the correct path to the photo
-    % \\includegraphics[width=2cm]{path/to/photo.jpg} \\\\
     \\textbf{John Doe}
 \\end{center}
-
-% If user_prompt is provided, include the User Prompt section
-% Uncomment the following lines to include User Prompt
-% \\section*{User Prompt}
-% I am looking to apply for a senior software engineering position.
 
 \\section*{Contact}
 Email: john@example.com \\\\
@@ -326,11 +317,6 @@ LinkedIn: \\href{https://linkedin.com/in/johndoe}{linkedin.com/in/johndoe}
 
 \\section*{Summary}
 Senior Software Engineer with 7+ years of experience in full-stack development.
-
-% If job_description is provided, include the Job Description section
-% Uncomment the following lines to include Job Description
-% \\section*{Job Description}
-% Responsible for developing scalable web applications and leading the engineering team.
 
 \\section*{Experience}
 \\textbf{Senior Software Engineer} \\\\
@@ -348,7 +334,6 @@ Stanford University, 2019-06
 Python, TypeScript, React, Node.js, Docker, Kubernetes
 
 \\end{document}`}
-          required
           aria-describedby="output-format"
         />
         <p id="output-format" className="text-sm text-muted-foreground mt-2">
@@ -364,7 +349,7 @@ Python, TypeScript, React, Node.js, Docker, Kubernetes
         </Alert>
       )}
       {success && (
-        <Alert >
+        <Alert>
           <AlertTitle>Success</AlertTitle>
           <AlertDescription>{success}</AlertDescription>
         </Alert>
