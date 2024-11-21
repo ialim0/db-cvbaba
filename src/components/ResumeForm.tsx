@@ -279,9 +279,9 @@ export default function ResumeForm() {
     }
   ],
   "skills": ["Python", "TypeScript", "React", "Node.js", "Docker", "Kubernetes"],
-  "user_prompt": "", // Optional: Your prompt to the employer
-  "photo_url": "", // Optional: Provide a URL to your photo
-  "job_description": "" // Optional: Describe the job you're applying for
+  "user_prompt": "",
+  "photo_url": "", 
+  "job_description": "" 
 }`}
           required
           aria-describedby="user-info-format"
