@@ -33,16 +33,20 @@ export default function ResumeForm() {
         throw new Error('Missing required fields in user data. Please include name, contact_information, and summary.')
       }
 
+      const jsonlData = {
+        prompt: JSON.stringify({
+          resume_style: formData.resume_style,
+          user_data: parsedUserData
+        }),
+        completion: formData.latex_code
+      }
+
       const response = await fetch('/api/save-resume', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          resume_style: formData.resume_style,
-          user_data: parsedUserData,
-          latex_code: formData.latex_code
-        }),
+        body: JSON.stringify(jsonlData),
       })
 
       if (response.ok) {
@@ -52,6 +56,7 @@ export default function ResumeForm() {
         throw new Error(errorData.message || 'Failed to save resume data')
       }
     } catch (error) {
+      console.error('Error:', error)
       setError(error instanceof Error ? error.message : 'An unexpected error occurred')
     }
   }
@@ -60,7 +65,7 @@ export default function ResumeForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <Label htmlFor="resume_style">Resume Style</Label>
-        <Select onValueChange={(value) => setFormData(prev => ({ ...prev, resume_style: value }))}>
+        <Select onValueChange={(value) => setFormData(prev => ({ ...prev, resume_style: value }))} required>
           <SelectTrigger>
             <SelectValue placeholder="Select a style" />
           </SelectTrigger>

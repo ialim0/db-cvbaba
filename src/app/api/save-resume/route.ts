@@ -4,27 +4,23 @@ import path from 'path'
 
 export async function POST(req: Request) {
   try {
-    const resumeData = await req.json()
+    const jsonlData = await req.json()
     const dataDir = path.join(process.cwd(), 'data')
-    const dataFilePath = path.join(dataDir, 'resumes.json')
+    const dataFilePath = path.join(dataDir, 'resumes.jsonl')
 
-    if (!resumeData.resume_style || !resumeData.user_data || !resumeData.latex_code) {
-      return NextResponse.json({ message: 'Invalid resume data structure' }, { status: 400 })
+    // Validate the structure of the jsonlData
+    if (!jsonlData.prompt || !jsonlData.completion) {
+      return NextResponse.json({ message: 'Invalid data structure' }, { status: 400 })
     }
 
+    // Create the data directory if it doesn't exist
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true })
     }
 
-    let existingData = []
-    if (fs.existsSync(dataFilePath)) {
-      const fileContent = fs.readFileSync(dataFilePath, 'utf-8')
-      existingData = JSON.parse(fileContent)
-    }
-
-    existingData.push(resumeData)
-
-    fs.writeFileSync(dataFilePath, JSON.stringify(existingData, null, 2))
+    // Append new data to the file
+    const jsonlString = JSON.stringify(jsonlData) + '\n'
+    fs.appendFileSync(dataFilePath, jsonlString)
 
     return NextResponse.json({ message: 'Resume data saved successfully' }, { status: 200 })
   } catch (error) {
