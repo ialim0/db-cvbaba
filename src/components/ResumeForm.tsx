@@ -6,11 +6,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input'; // Assuming you have an Input component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Define interfaces for form data
 interface ContactInfo {
   email?: string;
   phone?: string;
@@ -47,12 +45,12 @@ interface UserInfo {
 
 interface FormData {
   style?: 'Minimalist' | 'Modern' | 'Creative' | '';
-  user_info: string; // JSON string including task and page_limit
+  user_info: string; 
   output: string;
 }
 
 const initialFormData: FormData = {
-  style: 'Minimalist', // Set default style to 'Minimalist'
+  style: 'Minimalist',
   user_info: `{
     "task": "Generate a professional resume LaTeX template",
     "page_limit": 1,
@@ -128,14 +126,12 @@ export default function ResumeForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Handler for form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
     try {
-      // Parse and validate User Info JSON
       let parsedUserInfo: UserInfo = {};
       if (formData.user_info.trim()) {
         try {
@@ -145,26 +141,22 @@ export default function ResumeForm() {
         }
       }
 
-      // Validate Task
       if (!parsedUserInfo.task || typeof parsedUserInfo.task !== 'string') {
-        throw new Error('Please provide a valid task description within the User Information.');
+        parsedUserInfo.task = 'Generate a professional resume LaTeX template';
       }
 
-      // Validate Page Limit
       if (
         parsedUserInfo.page_limit === undefined ||
         typeof parsedUserInfo.page_limit !== 'number' ||
         parsedUserInfo.page_limit < 1
       ) {
-        throw new Error('Please provide a valid page limit (minimum 1) within the User Information.');
+        parsedUserInfo.page_limit = 1;
       }
 
-      // Validate Resume Style
       if (!formData.style) {
         throw new Error('Please select a resume style.');
       }
 
-      // Optionally validate other fields
       if (parsedUserInfo.photo_url && typeof parsedUserInfo.photo_url !== 'string') {
         throw new Error('photo_url must be a string.');
       }
@@ -177,20 +169,17 @@ export default function ResumeForm() {
         throw new Error('user_prompt must be a string.');
       }
 
-      // Validate Output
       if (!formData.output.trim()) {
         throw new Error('Output field cannot be empty.');
       }
 
-      // Assemble the payload
       const payload = {
         style: formData.style,
         user_info: parsedUserInfo,
         output: formData.output.trim(),
       };
 
-      // Send data to backend
-      const response = await fetch('/api/save-resume', {
+      const response = await fetch('/api/data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -200,7 +189,7 @@ export default function ResumeForm() {
 
       if (response.ok) {
         setSuccess('Resume data saved successfully!');
-        // Reset the form to initial state
+
         setFormData(initialFormData);
       } else {
         const errorData = await response.json();
@@ -214,7 +203,7 @@ export default function ResumeForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Resume Style Selection */}
+
       <div>
         <Label htmlFor="style">Resume Style</Label>
         <Select
@@ -225,7 +214,7 @@ export default function ResumeForm() {
             }))
           }
           required
-          value={formData.style} // This will now be 'Minimalist' by default
+          value={formData.style} 
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a style" />
@@ -238,7 +227,6 @@ export default function ResumeForm() {
         </Select>
       </div>
 
-      {/* User Information Input */}
       <div>
         <Label htmlFor="user_info">User Information (JSON format)</Label>
         <Textarea
@@ -286,11 +274,10 @@ export default function ResumeForm() {
         />
         <p id="user-info-format" className="text-sm text-muted-foreground mt-2">
           Provide a comprehensive JSON profile. Fields like "user_prompt", "photo_url", and "job_description" are optional.
-          Additionally, include "task" and "page_limit" within the JSON.
+          Additionally, include "task" and "page_limit" within the JSON. If omitted, default values will be used.
         </p>
       </div>
 
-      {/* Output Input */}
       <div>
         <Label htmlFor="output">Generated LaTeX Code</Label>
         <Textarea
@@ -341,7 +328,7 @@ Python, TypeScript, React, Node.js, Docker, Kubernetes
         </p>
       </div>
 
-      {/* Error and Success Alerts */}
+ 
       {error && (
         <Alert variant="destructive">
           <AlertTitle>Error</AlertTitle>
@@ -355,7 +342,6 @@ Python, TypeScript, React, Node.js, Docker, Kubernetes
         </Alert>
       )}
 
-      {/* Submit Button */}
       <Button type="submit">Save Fine-Tuning Data</Button>
     </form>
   );

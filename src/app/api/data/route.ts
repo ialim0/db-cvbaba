@@ -77,27 +77,40 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate Task
+    // Assign default values if task or page_limit are missing
     if (!user_info.task || typeof user_info.task !== 'string') {
-      return NextResponse.json(
-        { message: 'Invalid data structure: Missing or invalid task field within user_info.' },
-        { status: 400 }
-      );
+      user_info.task = 'Generate a professional resume LaTeX template';
     }
 
-    // Validate Page Limit
     if (
       user_info.page_limit === undefined ||
       typeof user_info.page_limit !== 'number' ||
       user_info.page_limit < 1
     ) {
+      user_info.page_limit = 1;
+    }
+
+    // Optionally validate other fields
+    if (user_info.photo_url && typeof user_info.photo_url !== 'string') {
       return NextResponse.json(
-        { message: 'Invalid data structure: Missing or invalid page_limit field within user_info.' },
+        { message: 'Invalid data structure: photo_url must be a string.' },
         { status: 400 }
       );
     }
 
-    // Further validations for optional fields can be added here
+    if (user_info.job_description && typeof user_info.job_description !== 'string') {
+      return NextResponse.json(
+        { message: 'Invalid data structure: job_description must be a string.' },
+        { status: 400 }
+      );
+    }
+
+    if (user_info.user_prompt && typeof user_info.user_prompt !== 'string') {
+      return NextResponse.json(
+        { message: 'Invalid data structure: user_prompt must be a string.' },
+        { status: 400 }
+      );
+    }
 
     // Start constructing the textual prompt using user-provided task and page_limit
     let textualPrompt = `Task: ${user_info.task}
