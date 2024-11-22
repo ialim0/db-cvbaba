@@ -1,5 +1,3 @@
-// File: components/ResumeForm.tsx
-
 'use client';
 
 import React, { useState } from 'react';
@@ -8,84 +6,52 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
 
-interface ContactInfo {
-  email?: string;
-  phone?: string;
-  linkedin?: string;
-}
-
-interface Experience {
-  title?: string;
-  company?: string;
-  start_date?: string;
-  end_date?: string;
-  achievements?: string[];
-}
-
-interface Education {
-  degree?: string;
-  institution?: string;
-  graduation_date?: string;
-}
-
-interface UserInfo {
-  task?: string;
-  page_limit?: number;
-  name?: string;
-  contact?: ContactInfo;
-  summary?: string;
-  experience?: Experience[];
-  education?: Education[];
-  skills?: string[];
-  user_prompt?: string;
-  photo_url?: string;
-  job_description?: string;
+interface Message {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
 }
 
 interface FormData {
+  messages: Message[];
   style?: 'Minimalist' | 'Modern' | 'Creative' | '';
-  user_info: string; 
-  output: string;
 }
 
 const initialFormData: FormData = {
   style: 'Minimalist',
-  user_info: `{
-    "task": "Generate a professional resume LaTeX template",
-    "page_limit": 1,
-    "name": "John Doe",
-    "contact": {
-      "email": "john@example.com",
-      "phone": "123-456-7890",
-      "linkedin": "linkedin.com/in/johndoe"
+  messages: [
+    {
+      role: 'system',
+      content: 'You are a professional resume writer specializing in LaTeX templates.'
     },
-    "summary": "Senior Software Engineer with 7+ years of experience in full-stack development",
-    "experience": [
-      {
-        "title": "Senior Software Engineer",
-        "company": "Tech Innovations Inc.",
-        "start_date": "2020-01",
-        "end_date": "Present",
-        "achievements": [
-          "Led development of scalable microservices architecture",
-          "Reduced system latency by 40% through optimized algorithms"
-        ]
-      }
-    ],
-    "education": [
-      {
-        "degree": "M.S. Computer Science",
-        "institution": "Stanford University",
-        "graduation_date": "2019-06"
-      }
-    ],
-    "skills": ["Python", "TypeScript", "React", "Node.js", "Docker", "Kubernetes"],
-    "user_prompt": "",
-    "photo_url": "",
-    "job_description": ""
-  }`,
-  output: `\\documentclass{article}
+    {
+      role: 'user',
+      content: `Task: Generate a professional resume LaTeX template
+Style: Minimalist
+Page Limit: 1
+
+User Profile:
+Name: John Doe
+Email: john@example.com
+Phone: 123-456-7890
+LinkedIn: linkedin.com/in/johndoe
+Summary: Senior Software Engineer with 7+ years of experience in full-stack development
+
+Experience:
+Senior Software Engineer at Tech Innovations Inc. (2020-01 - Present)
+- Led development of scalable microservices architecture
+- Reduced system latency by 40% through optimized algorithms
+
+Education:
+M.S. Computer Science, Stanford University, 2019-06
+
+Skills:
+Python, TypeScript, React, Node.js, Docker, Kubernetes`
+    },
+    {
+      role: 'assistant',
+      content: `\\documentclass{article}
 \\usepackage{graphicx}
 \\usepackage[margin=1in]{geometry}
 \\usepackage{hyperref}
@@ -119,12 +85,15 @@ Stanford University, 2019-06
 Python, TypeScript, React, Node.js, Docker, Kubernetes
 
 \\end{document}`
+    }
+  ]
 };
 
 export default function ResumeForm() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('user');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -132,64 +101,24 @@ export default function ResumeForm() {
     setSuccess(null);
 
     try {
-      let parsedUserInfo: UserInfo = {};
-      if (formData.user_info.trim()) {
-        try {
-          parsedUserInfo = JSON.parse(formData.user_info);
-        } catch {
-          throw new Error('Invalid JSON format in User Information. Please check your input.');
-        }
-      }
-
-      if (!parsedUserInfo.task || typeof parsedUserInfo.task !== 'string') {
-        parsedUserInfo.task = 'Generate a professional resume LaTeX template';
-      }
-
-      if (
-        parsedUserInfo.page_limit === undefined ||
-        typeof parsedUserInfo.page_limit !== 'number' ||
-        parsedUserInfo.page_limit < 1
-      ) {
-        parsedUserInfo.page_limit = 1;
-      }
-
       if (!formData.style) {
         throw new Error('Please select a resume style.');
       }
 
-      if (parsedUserInfo.photo_url && typeof parsedUserInfo.photo_url !== 'string') {
-        throw new Error('photo_url must be a string.');
+      if (!formData.messages || formData.messages.length < 2) {
+        throw new Error('Both user message and assistant response are required.');
       }
 
-      if (parsedUserInfo.job_description && typeof parsedUserInfo.job_description !== 'string') {
-        throw new Error('job_description must be a string.');
-      }
-
-      if (parsedUserInfo.user_prompt && typeof parsedUserInfo.user_prompt !== 'string') {
-        throw new Error('user_prompt must be a string.');
-      }
-
-      if (!formData.output.trim()) {
-        throw new Error('Output field cannot be empty.');
-      }
-
-      const payload = {
-        style: formData.style,
-        user_info: parsedUserInfo,
-        output: formData.output.trim(),
-      };
-
-      const response = await fetch('/api/data', {
+      const response = await fetch('/api/save-resume', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
       if (response.ok) {
         setSuccess('Resume data saved successfully!');
-
         setFormData(initialFormData);
       } else {
         const errorData = await response.json();
@@ -201,9 +130,17 @@ export default function ResumeForm() {
     }
   };
 
+  const handleMessageChange = (role: 'system' | 'user' | 'assistant', content: string) => {
+    setFormData(prev => ({
+      ...prev,
+      messages: prev.messages.map(msg => 
+        msg.role === role ? { ...msg, content } : msg
+      )
+    }));
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-
       <div>
         <Label htmlFor="style">Resume Style</Label>
         <Select
@@ -214,7 +151,7 @@ export default function ResumeForm() {
             }))
           }
           required
-          value={formData.style} 
+          value={formData.style}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a style" />
@@ -227,108 +164,53 @@ export default function ResumeForm() {
         </Select>
       </div>
 
-      <div>
-        <Label htmlFor="user_info">User Information (JSON format)</Label>
-        <Textarea
-          id="user_info"
-          value={formData.user_info}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, user_info: e.target.value }))
-          }
-          rows={30}
-          placeholder={`{
-  "task": "Generate a professional resume LaTeX template",
-  "page_limit": 1,
-  "name": "John Doe",
-  "contact": {
-    "email": "john@example.com",
-    "phone": "123-456-7890",
-    "linkedin": "linkedin.com/in/johndoe"
-  },
-  "summary": "Senior Software Engineer with 7+ years of experience in full-stack development",
-  "experience": [
-    {
-      "title": "Senior Software Engineer",
-      "company": "Tech Innovations Inc.",
-      "start_date": "2020-01",
-      "end_date": "Present",
-      "achievements": [
-        "Led development of scalable microservices architecture",
-        "Reduced system latency by 40% through optimized algorithms"
-      ]
-    }
-  ],
-  "education": [
-    {
-      "degree": "M.S. Computer Science",
-      "institution": "Stanford University",
-      "graduation_date": "2019-06"
-    }
-  ],
-  "skills": ["Python", "TypeScript", "React", "Node.js", "Docker", "Kubernetes"],
-  "user_prompt": "",
-  "photo_url": "",
-  "job_description": ""
-}`}
-          aria-describedby="user-info-format"
-        />
-        <p id="user-info-format" className="text-sm text-muted-foreground mt-2">
-          Provide a comprehensive JSON profile. Fields like "user_prompt", "photo_url", and "job_description" are optional.
-          Additionally, include "task" and "page_limit" within the JSON. If omitted, default values will be used.
-        </p>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="system">System</TabsTrigger>
+          <TabsTrigger value="user">User</TabsTrigger>
+          <TabsTrigger value="assistant">Assistant</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="system">
+          <div>
+            <Label htmlFor="system-message">System Message</Label>
+            <Textarea
+              id="system-message"
+              value={formData.messages.find(m => m.role === 'system')?.content || ''}
+              onChange={(e) => handleMessageChange('system', e.target.value)}
+              rows={5}
+              placeholder="Enter system message..."
+            />
+          </div>
+        </TabsContent>
 
-      <div>
-        <Label htmlFor="output">Generated LaTeX Code</Label>
-        <Textarea
-          id="output"
-          value={formData.output}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, output: e.target.value }))
-          }
-          rows={20}
-          placeholder={`\\documentclass{article}
-\\usepackage{graphicx}
-\\usepackage[margin=1in]{geometry}
-\\usepackage{hyperref}
-\\begin{document}
+        <TabsContent value="user">
+          <div>
+            <Label htmlFor="user-message">User Message</Label>
+            <Textarea
+              id="user-message"
+              value={formData.messages.find(m => m.role === 'user')?.content || ''}
+              onChange={(e) => handleMessageChange('user', e.target.value)}
+              rows={20}
+              placeholder="Enter user message..."
+            />
+          </div>
+        </TabsContent>
 
-\\begin{center}
-    \\textbf{John Doe}
-\\end{center}
+        <TabsContent value="assistant">
+          <div>
+            <Label htmlFor="assistant-message">Assistant Response (LaTeX)</Label>
+            <Textarea
+              id="assistant-message"
+              value={formData.messages.find(m => m.role === 'assistant')?.content || ''}
+              onChange={(e) => handleMessageChange('assistant', e.target.value)}
+              rows={20}
+              placeholder="Enter LaTeX response..."
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
 
-\\section*{Contact}
-Email: john@example.com \\\\
-Phone: 123-456-7890 \\\\
-LinkedIn: \\href{https://linkedin.com/in/johndoe}{linkedin.com/in/johndoe}
-
-\\section*{Summary}
-Senior Software Engineer with 7+ years of experience in full-stack development.
-
-\\section*{Experience}
-\\textbf{Senior Software Engineer} \\\\
-Tech Innovations Inc., 2020-01 -- Present
-\\begin{itemize}
-    \\item Led development of scalable microservices architecture
-    \\item Reduced system latency by 40% through optimized algorithms
-\\end{itemize}
-
-\\section*{Education}
-\\textbf{M.S. Computer Science} \\\\
-Stanford University, 2019-06
-
-\\section*{Skills}
-Python, TypeScript, React, Node.js, Docker, Kubernetes
-
-\\end{document}`}
-          aria-describedby="output-format"
-        />
-        <p id="output-format" className="text-sm text-muted-foreground mt-2">
-          Input or review the generated LaTeX code for your resume.
-        </p>
-      </div>
-
- 
       {error && (
         <Alert variant="destructive">
           <AlertTitle>Error</AlertTitle>
