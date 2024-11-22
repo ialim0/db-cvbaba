@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -18,12 +20,14 @@ interface FormData {
   style?: 'Minimalist' | 'Modern' | 'Creative' | '';
 }
 
+const initialSystemMessage = 'You are a professional resume writer specializing in LaTeX templates.';
+
 const initialFormData: FormData = {
   style: 'Minimalist',
   messages: [
     {
       role: 'system',
-      content: 'You are a professional resume writer specializing in LaTeX templates.'
+      content: initialSystemMessage
     },
     {
       role: 'user',
@@ -93,7 +97,9 @@ export default function ResumeForm() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('user');
+  const [activeTab, setActiveTab] = useState('chat');
+  const [newMessage, setNewMessage] = useState('');
+  const [isUserMessage, setIsUserMessage] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -119,7 +125,6 @@ export default function ResumeForm() {
 
       if (response.ok) {
         setSuccess('Resume data saved successfully!');
-        setFormData(initialFormData);
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to save resume data');
@@ -139,38 +144,139 @@ export default function ResumeForm() {
     }));
   };
 
+  const handleAddMessage = () => {
+    if (!newMessage.trim()) return;
+
+    setFormData(prev => ({
+      ...prev,
+      messages: [
+        ...prev.messages,
+        {
+          role: isUserMessage ? 'user' : 'assistant',
+          content: newMessage.trim()
+        }
+      ]
+    }));
+
+    setNewMessage('');
+  };
+
+  const handleNewChat = () => {
+    setFormData({
+      style: 'Minimalist',
+      messages: [
+        {
+          role: 'system',
+          content: initialSystemMessage
+        }
+      ]
+    });
+    setActiveTab('chat');
+  };
+
+  const handleEditMessage = (index: number, content: string) => {
+    setFormData(prev => ({
+      ...prev,
+      messages: prev.messages.map((msg, i) => 
+        i === index ? { ...msg, content } : msg
+      )
+    }));
+  };
+
+  const handleDeleteMessage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      messages: prev.messages.filter((_, i) => i !== index)
+    }));
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <Label htmlFor="style">Resume Style</Label>
-        <Select
-          onValueChange={(value: string) =>
-            setFormData((prev) => ({
-              ...prev,
-              style: value as FormData['style'],
-            }))
-          }
-          required
-          value={formData.style}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a style" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Minimalist">Minimalist</SelectItem>
-            <SelectItem value="Modern">Modern</SelectItem>
-            <SelectItem value="Creative">Creative</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex justify-between items-center">
+        <div className="flex-1 mr-4">
+          <Label htmlFor="style">Resume Style</Label>
+          <Select
+            onValueChange={(value: string) =>
+              setFormData((prev) => ({
+                ...prev,
+                style: value as FormData['style'],
+              }))
+            }
+            required
+            value={formData.style}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a style" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Minimalist">Minimalist</SelectItem>
+              <SelectItem value="Modern">Modern</SelectItem>
+              <SelectItem value="Creative">Creative</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button type="button" onClick={handleNewChat} variant="outline">
+          New Chat
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
+          <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
-          <TabsTrigger value="user">User</TabsTrigger>
-          <TabsTrigger value="assistant">Assistant</TabsTrigger>
+          <TabsTrigger value="edit">Edit Messages</TabsTrigger>
         </TabsList>
         
+        <TabsContent value="chat">
+          <Card>
+            <CardContent className="p-4">
+              <ScrollArea className="h-[400px] mb-4">
+                {formData.messages.map((message, index) => (
+                  message.role !== 'system' && (
+                    <div
+                      key={index}
+                      className={`mb-4 p-4 rounded-lg ${
+                        message.role === 'user' ? 'bg-muted ml-12' : 'bg-primary/10 mr-12'
+                      }`}
+                    >
+                      <div className="font-semibold mb-2">
+                        {message.role === 'user' ? 'User' : 'Assistant'}
+                      </div>
+                      <div className="whitespace-pre-wrap">{message.content}</div>
+                    </div>
+                  )
+                ))}
+              </ScrollArea>
+              
+              <div className="flex flex-col space-y-4">
+                <Textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  rows={4}
+                />
+                <div className="flex justify-between items-center">
+                  <Select
+                    value={isUserMessage ? 'user' : 'assistant'}
+                    onValueChange={(value) => setIsUserMessage(value === 'user')}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select message type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User Message</SelectItem>
+                      <SelectItem value="assistant">Assistant Message</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" onClick={handleAddMessage}>
+                    Add Message
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="system">
           <div>
             <Label htmlFor="system-message">System Message</Label>
@@ -184,30 +290,34 @@ export default function ResumeForm() {
           </div>
         </TabsContent>
 
-        <TabsContent value="user">
-          <div>
-            <Label htmlFor="user-message">User Message</Label>
-            <Textarea
-              id="user-message"
-              value={formData.messages.find(m => m.role === 'user')?.content || ''}
-              onChange={(e) => handleMessageChange('user', e.target.value)}
-              rows={20}
-              placeholder="Enter user message..."
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="assistant">
-          <div>
-            <Label htmlFor="assistant-message">Assistant Response (LaTeX)</Label>
-            <Textarea
-              id="assistant-message"
-              value={formData.messages.find(m => m.role === 'assistant')?.content || ''}
-              onChange={(e) => handleMessageChange('assistant', e.target.value)}
-              rows={20}
-              placeholder="Enter LaTeX response..."
-            />
-          </div>
+        <TabsContent value="edit">
+          <ScrollArea className="h-[600px]">
+            {formData.messages.map((message, index) => (
+              <div key={index} className="mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <Label>
+                    {message.role.charAt(0).toUpperCase() + message.role.slice(1)} Message
+                  </Label>
+                  {message.role !== 'system' && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteMessage(index)}
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </div>
+                <Textarea
+                  value={message.content}
+                  onChange={(e) => handleEditMessage(index, e.target.value)}
+                  rows={8}
+                  className={message.role === 'system' ? 'bg-muted' : ''}
+                />
+              </div>
+            ))}
+          </ScrollArea>
         </TabsContent>
       </Tabs>
 
