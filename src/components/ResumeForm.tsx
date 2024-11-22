@@ -115,7 +115,7 @@ export default function ResumeForm() {
         throw new Error('Both user message and assistant response are required.');
       }
 
-      const response = await fetch('/api/save-resume', {
+      const response = await fetch('/api/dg', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
