@@ -3,7 +3,6 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { log } from 'console';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';

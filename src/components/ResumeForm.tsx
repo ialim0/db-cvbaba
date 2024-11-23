@@ -23,20 +23,22 @@ interface FormData {
 }
 
 const getSystemMessageForStyle = (style: FormData['style']) => {
+  const baseMessage = 'You are a LaTeX resume template generator. Provide only the complete LaTeX code without any explanations, comments, or markdown formatting. The output should be pure LaTeX that can be directly compiled.';
+  
   switch (style) {
     case 'Minimalist':
-      return 'You are a professional resume writer specializing in minimalist LaTeX templates. Focus on clean layouts, essential information, and efficient use of white space. Avoid decorative elements and keep the design straightforward.';
+      return `${baseMessage} Generate a minimalist template with clean layouts, essential information, and efficient use of white space. Avoid decorative elements and keep the design straightforward.`;
     case 'Modern':
-      return 'You are a professional resume writer specializing in modern LaTeX templates. Create contemporary layouts with subtle design elements, professional typography, and a balanced use of white space. Incorporate modern formatting while maintaining readability.';
+      return `${baseMessage} Generate a modern template with subtle design elements, professional typography, and balanced white space. Include contemporary formatting while maintaining readability.`;
     case 'Creative':
-      return 'You are a professional resume writer specializing in creative LaTeX templates. Design unique layouts that stand out while maintaining professionalism. Use innovative formatting, thoughtful typography, and creative section arrangements to showcase information effectively.';
+      return `${baseMessage} Generate a creative template with unique layouts that stand out while maintaining professionalism. Use innovative formatting, thoughtful typography, and creative section arrangements.`;
     default:
-      return 'You are a professional resume writer specializing in LaTeX templates.';
+      return baseMessage;
   }
 };
 
 const generateUserMessageContent = (style: FormData['style']) => `
-Task: Generate a professional resume LaTeX template
+Task: Generate a LaTeX resume template
 Style: ${style}
 Page Limit: 1
 
@@ -75,22 +77,17 @@ const initialFormData: FormData = {
       content: `\\documentclass[11pt,a4paper]{moderncv}
 \\moderncvstyle{classic}
 \\moderncvcolor{blue}
-
 \\usepackage[utf8]{inputenc}
 \\usepackage[scale=0.75]{geometry}
 \\usepackage{hyperref}
-
 \\name{John}{Doe}
 \\email{john@example.com}
 \\phone[mobile]{123-456-7890}
 \\social[linkedin]{johndoe}
-
 \\begin{document}
 \\makecvtitle
-
 \\section{Summary}
 Senior Software Engineer with 7+ years of experience in full-stack development.
-
 \\section{Experience}
 \\cventry{2020--Present}{Senior Software Engineer}{Tech Innovations Inc.}{}{}{
   \\begin{itemize}
@@ -98,13 +95,10 @@ Senior Software Engineer with 7+ years of experience in full-stack development.
     \\item Reduced system latency by 40\\% through optimized algorithms
   \\end{itemize}
 }
-
 \\section{Education}
 \\cventry{2019}{M.S. Computer Science}{Stanford University}{}{}
-
 \\section{Skills}
 \\cvitem{}{Python, TypeScript, React, Node.js, Docker, Kubernetes}
-
 \\end{document}`,
     },
   ],
@@ -118,7 +112,7 @@ export default function ResumeForm() {
   const [newMessage, setNewMessage] = useState('');
   const [isUserMessage, setIsUserMessage] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false); 
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const updateSystemMessage = (style: FormData['style']) => {
     const newSystemMessage = getSystemMessageForStyle(style);
@@ -225,7 +219,7 @@ export default function ResumeForm() {
 
       if (response.ok) {
         setSuccess('Resume data saved successfully!');
-        setIsSuccessModalOpen(true); 
+        setIsSuccessModalOpen(true);
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to save resume data');
