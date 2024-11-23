@@ -4,13 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,8 +20,18 @@ interface FormData {
   style?: 'Minimalist' | 'Modern' | 'Creative' | '';
 }
 
-const generateSystemMessage = (style: FormData['style']) =>
-  `You are a professional resume writer specializing in ${style} LaTeX templates.`;
+const getSystemMessageForStyle = (style: FormData['style']) => {
+  switch (style) {
+    case 'Minimalist':
+      return 'You are a professional resume writer specializing in minimalist LaTeX templates. Focus on clean layouts, essential information, and efficient use of white space. Avoid decorative elements and keep the design straightforward.';
+    case 'Modern':
+      return 'You are a professional resume writer specializing in modern LaTeX templates. Create contemporary layouts with subtle design elements, professional typography, and a balanced use of white space. Incorporate modern formatting while maintaining readability.';
+    case 'Creative':
+      return 'You are a professional resume writer specializing in creative LaTeX templates. Design unique layouts that stand out while maintaining professionalism. Use innovative formatting, thoughtful typography, and creative section arrangements to showcase information effectively.';
+    default:
+      return 'You are a professional resume writer specializing in LaTeX templates.';
+  }
+};
 
 const generateUserMessageContent = (style: FormData['style']) => `
 Task: Generate a professional resume LaTeX template
@@ -58,7 +62,7 @@ const initialFormData: FormData = {
   messages: [
     {
       role: 'system',
-      content: generateSystemMessage('Minimalist'),
+      content: getSystemMessageForStyle('Minimalist'),
     },
     {
       role: 'user',
@@ -67,8 +71,8 @@ const initialFormData: FormData = {
     {
       role: 'assistant',
       content: `\\documentclass[11pt,a4paper]{moderncv}
-\\moderncvstyle{classic} % Styles: 'casual', 'classic', 'banking', etc.
-\\moderncvcolor{blue}    % Colors: 'blue', 'orange', 'green', etc.
+\\moderncvstyle{classic}
+\\moderncvcolor{blue}
 
 \\usepackage[utf8]{inputenc}
 \\usepackage[scale=0.75]{geometry}
@@ -113,16 +117,84 @@ export default function ResumeForm() {
   const [isUserMessage, setIsUserMessage] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    console.log('Current formData:', formData);
-  }, [formData]);
-
-  const getUserMessageIndex = (messages: Message[]) => {
-    return messages.findIndex((m) => m.role === 'user');
+  const updateSystemMessage = (style: FormData['style']) => {
+    const newSystemMessage = getSystemMessageForStyle(style);
+    setFormData((prev) => ({
+      ...prev,
+      messages: prev.messages.map((msg) =>
+        msg.role === 'system' ? { ...msg, content: newSystemMessage } : msg
+      ),
+    }));
   };
 
-  const getSystemMessageIndex = (messages: Message[]) => {
-    return messages.findIndex((m) => m.role === 'system');
+  const handleStyleChange = (value: string) => {
+    const newStyle = value as FormData['style'];
+    setFormData((prev) => {
+      const updatedMessages = prev.messages.map((msg) => {
+        if (msg.role === 'system') {
+          return { ...msg, content: getSystemMessageForStyle(newStyle) };
+        }
+        if (msg.role === 'user') {
+          return { ...msg, content: generateUserMessageContent(newStyle) };
+        }
+        return msg;
+      });
+
+      return {
+        ...prev,
+        style: newStyle,
+        messages: updatedMessages,
+      };
+    });
+  };
+
+  const handleNewChat = () => {
+    const style = 'Minimalist';
+    setFormData({
+      style,
+      messages: [
+        {
+          role: 'system',
+          content: getSystemMessageForStyle(style),
+        },
+        {
+          role: 'user',
+          content: generateUserMessageContent(style),
+        },
+      ],
+    });
+    setActiveTab('chat');
+  };
+
+  const handleAddMessage = () => {
+    if (!newMessage.trim()) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      messages: [
+        ...prev.messages,
+        {
+          role: isUserMessage ? 'user' : 'assistant',
+          content: newMessage.trim(),
+        },
+      ],
+    }));
+
+    setNewMessage('');
+  };
+
+  const handleEditMessage = (index: number, content: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      messages: prev.messages.map((msg, i) => (i === index ? { ...msg, content } : msg)),
+    }));
+  };
+
+  const handleDeleteMessage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      messages: prev.messages.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -138,13 +210,6 @@ export default function ResumeForm() {
 
       if (!formData.messages || formData.messages.length < 2) {
         throw new Error('At least one user message and one assistant response are required.');
-      }
-
-      const assistantMessage = formData.messages.find((m) => m.role === 'assistant');
-      if (assistantMessage) {
-        console.log('Assistant Message Content:', assistantMessage.content);
-      } else {
-        console.log('No assistant message found.');
       }
 
       const response = await fetch('/api/dg', {
@@ -167,82 +232,6 @@ export default function ResumeForm() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleAddMessage = () => {
-    if (!newMessage.trim()) return;
-
-    setFormData((prev) => ({
-      ...prev,
-      messages: [
-        ...prev.messages,
-        {
-          role: isUserMessage ? 'user' : 'assistant',
-          content: newMessage.trim(),
-        },
-      ],
-    }));
-
-    setNewMessage('');
-  };
-
-  const handleNewChat = () => {
-    setFormData({
-      style: 'Minimalist',
-      messages: [
-        {
-          role: 'system',
-          content: generateSystemMessage('Minimalist'),
-        },
-        {
-          role: 'user',
-          content: generateUserMessageContent('Minimalist'),
-        },
-      ],
-    });
-    setActiveTab('chat');
-  };
-
-  const handleEditMessage = (index: number, content: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      messages: prev.messages.map((msg, i) => (i === index ? { ...msg, content } : msg)),
-    }));
-  };
-
-  const handleDeleteMessage = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      messages: prev.messages.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleStyleChange = (value: string) => {
-    console.log('Selected style:', value);
-    setFormData((prev) => {
-      const userMsgIndex = getUserMessageIndex(prev.messages);
-      const systemMsgIndex = getSystemMessageIndex(prev.messages);
-
-      let updatedMessages = [...prev.messages];
-      if (userMsgIndex !== -1) {
-        updatedMessages[userMsgIndex] = {
-          ...updatedMessages[userMsgIndex],
-          content: generateUserMessageContent(value as FormData['style']),
-        };
-      }
-      if (systemMsgIndex !== -1) {
-        updatedMessages[systemMsgIndex] = {
-          ...updatedMessages[systemMsgIndex],
-          content: generateSystemMessage(value as FormData['style']),
-        };
-      }
-
-      return {
-        ...prev,
-        style: value as FormData['style'],
-        messages: updatedMessages,
-      };
-    });
   };
 
   return (
@@ -347,7 +336,7 @@ export default function ResumeForm() {
                   onChange={(e) => handleEditMessage(index, e.target.value)}
                   rows={8}
                   className={message.role === 'system' ? 'bg-muted' : ''}
-                  readOnly={message.role === 'system'} // Make system messages read-only
+                  readOnly={message.role === 'system'}
                 />
               </div>
             ))}
