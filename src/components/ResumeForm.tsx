@@ -4,12 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Trash2 } from 'lucide-react';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -21,7 +26,8 @@ interface FormData {
   style?: 'Minimalist' | 'Modern' | 'Creative' | '';
 }
 
-const initialSystemMessage = 'You are a professional resume writer specializing in LaTeX templates.';
+const generateSystemMessage = (style: FormData['style']) =>
+  `You are a professional resume writer specializing in ${style} LaTeX templates.`;
 
 const generateUserMessageContent = (style: FormData['style']) => `
 Task: Generate a professional resume LaTeX template
@@ -52,7 +58,7 @@ const initialFormData: FormData = {
   messages: [
     {
       role: 'system',
-      content: initialSystemMessage,
+      content: generateSystemMessage('Minimalist'),
     },
     {
       role: 'user',
@@ -60,38 +66,38 @@ const initialFormData: FormData = {
     },
     {
       role: 'assistant',
-      content: `\\documentclass{article}
-\\usepackage{graphicx}
-\\usepackage[margin=1in]{geometry}
+      content: `\\documentclass[11pt,a4paper]{moderncv}
+\\moderncvstyle{classic} % Styles: 'casual', 'classic', 'banking', etc.
+\\moderncvcolor{blue}    % Colors: 'blue', 'orange', 'green', etc.
+
+\\usepackage[utf8]{inputenc}
+\\usepackage[scale=0.75]{geometry}
 \\usepackage{hyperref}
+
+\\name{John}{Doe}
+\\email{john@example.com}
+\\phone[mobile]{123-456-7890}
+\\social[linkedin]{johndoe}
+
 \\begin{document}
+\\makecvtitle
 
-\\begin{center}
-    \\textbf{John Doe}
-\\end{center}
-
-\\section*{Contact}
-Email: john@example.com \\\\\\\\
-Phone: 123-456-7890 \\\\\\\\
-LinkedIn: \\href{https://linkedin.com/in/johndoe}{linkedin.com/in/johndoe}
-
-\\section*{Summary}
+\\section{Summary}
 Senior Software Engineer with 7+ years of experience in full-stack development.
 
-\\section*{Experience}
-\\textbf{Senior Software Engineer} \\\\\\\\
-Tech Innovations Inc., 2020-01 -- Present
-\\begin{itemize}
+\\section{Experience}
+\\cventry{2020--Present}{Senior Software Engineer}{Tech Innovations Inc.}{}{}{
+  \\begin{itemize}
     \\item Led development of scalable microservices architecture
-    \\item Reduced system latency by 40% through optimized algorithms
-\\end{itemize}
+    \\item Reduced system latency by 40\\% through optimized algorithms
+  \\end{itemize}
+}
 
-\\section*{Education}
-\\textbf{M.S. Computer Science} \\\\\\\\
-Stanford University, 2019-06
+\\section{Education}
+\\cventry{2019}{M.S. Computer Science}{Stanford University}{}{}
 
-\\section*{Skills}
-Python, TypeScript, React, Node.js, Docker, Kubernetes
+\\section{Skills}
+\\cvitem{}{Python, TypeScript, React, Node.js, Docker, Kubernetes}
 
 \\end{document}`,
     },
@@ -107,13 +113,16 @@ export default function ResumeForm() {
   const [isUserMessage, setIsUserMessage] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Debugging: Log formData whenever it changes
   useEffect(() => {
     console.log('Current formData:', formData);
   }, [formData]);
 
   const getUserMessageIndex = (messages: Message[]) => {
     return messages.findIndex((m) => m.role === 'user');
+  };
+
+  const getSystemMessageIndex = (messages: Message[]) => {
+    return messages.findIndex((m) => m.role === 'system');
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -131,6 +140,13 @@ export default function ResumeForm() {
         throw new Error('At least one user message and one assistant response are required.');
       }
 
+      const assistantMessage = formData.messages.find((m) => m.role === 'assistant');
+      if (assistantMessage) {
+        console.log('Assistant Message Content:', assistantMessage.content);
+      } else {
+        console.log('No assistant message found.');
+      }
+
       const response = await fetch('/api/dg', {
         method: 'POST',
         headers: {
@@ -141,8 +157,6 @@ export default function ResumeForm() {
 
       if (response.ok) {
         setSuccess('Resume data saved successfully!');
-        // Optionally reset the form
-        // setFormData(initialFormData);
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to save resume data');
@@ -178,7 +192,7 @@ export default function ResumeForm() {
       messages: [
         {
           role: 'system',
-          content: initialSystemMessage,
+          content: generateSystemMessage('Minimalist'),
         },
         {
           role: 'user',
@@ -207,12 +221,19 @@ export default function ResumeForm() {
     console.log('Selected style:', value);
     setFormData((prev) => {
       const userMsgIndex = getUserMessageIndex(prev.messages);
+      const systemMsgIndex = getSystemMessageIndex(prev.messages);
 
       let updatedMessages = [...prev.messages];
       if (userMsgIndex !== -1) {
         updatedMessages[userMsgIndex] = {
           ...updatedMessages[userMsgIndex],
           content: generateUserMessageContent(value as FormData['style']),
+        };
+      }
+      if (systemMsgIndex !== -1) {
+        updatedMessages[systemMsgIndex] = {
+          ...updatedMessages[systemMsgIndex],
+          content: generateSystemMessage(value as FormData['style']),
         };
       }
 
@@ -248,7 +269,6 @@ export default function ResumeForm() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="chat">Chat</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="edit">Edit Messages</TabsTrigger>
         </TabsList>
 
@@ -303,28 +323,14 @@ export default function ResumeForm() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="system">
-          <div>
-            <Label htmlFor="system-message">System Message</Label>
-            <Textarea
-              id="system-message"
-              value={formData.messages.find((m) => m.role === 'system')?.content || ''}
-              onChange={(e) => {
-                const systemIndex = formData.messages.findIndex((m) => m.role === 'system');
-                handleEditMessage(systemIndex, e.target.value);
-              }}
-              rows={5}
-              placeholder="Enter system message..."
-            />
-          </div>
-        </TabsContent>
-
         <TabsContent value="edit">
           <ScrollArea className="h-[600px]">
             {formData.messages.map((message, index) => (
               <div key={index} className="mb-6">
                 <div className="flex justify-between items-center mb-2">
-                  <Label>{message.role.charAt(0).toUpperCase() + message.role.slice(1)} Message</Label>
+                  <Label>
+                    {message.role.charAt(0).toUpperCase() + message.role.slice(1)} Message
+                  </Label>
                   {message.role !== 'system' && (
                     <Button
                       type="button"
@@ -341,6 +347,7 @@ export default function ResumeForm() {
                   onChange={(e) => handleEditMessage(index, e.target.value)}
                   rows={8}
                   className={message.role === 'system' ? 'bg-muted' : ''}
+                  readOnly={message.role === 'system'} // Make system messages read-only
                 />
               </div>
             ))}

@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { log } from 'console';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -34,7 +35,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find user and assistant messages
     const userMessage = messages.find(m => m.role === 'user')?.content;
     const assistantMessage = messages.find(m => m.role === 'assistant')?.content;
     
