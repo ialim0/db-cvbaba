@@ -1,6 +1,7 @@
+// components/ResumeForm.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal'; 
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -116,6 +118,7 @@ export default function ResumeForm() {
   const [newMessage, setNewMessage] = useState('');
   const [isUserMessage, setIsUserMessage] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false); 
 
   const updateSystemMessage = (style: FormData['style']) => {
     const newSystemMessage = getSystemMessageForStyle(style);
@@ -222,6 +225,7 @@ export default function ResumeForm() {
 
       if (response.ok) {
         setSuccess('Resume data saved successfully!');
+        setIsSuccessModalOpen(true); 
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to save resume data');
@@ -235,131 +239,137 @@ export default function ResumeForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex-1 mr-4">
-          <Label htmlFor="style">Resume Style</Label>
-          <Select onValueChange={handleStyleChange} required value={formData.style}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a style" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Minimalist">Minimalist</SelectItem>
-              <SelectItem value="Modern">Modern</SelectItem>
-              <SelectItem value="Creative">Creative</SelectItem>
-            </SelectContent>
-          </Select>
+    <>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex-1 mr-4">
+            <Label htmlFor="style">Resume Style</Label>
+            <Select onValueChange={handleStyleChange} required value={formData.style}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a style" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Minimalist">Minimalist</SelectItem>
+                <SelectItem value="Modern">Modern</SelectItem>
+                <SelectItem value="Creative">Creative</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button type="button" onClick={handleNewChat} variant="outline">
+            New Chat
+          </Button>
         </div>
-        <Button type="button" onClick={handleNewChat} variant="outline">
-          New Chat
-        </Button>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="chat">Chat</TabsTrigger>
-          <TabsTrigger value="edit">Edit Messages</TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="chat">Chat</TabsTrigger>
+            <TabsTrigger value="edit">Edit Messages</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="chat">
-          <Card>
-            <CardContent className="p-4">
-              <ScrollArea className="h-[400px] mb-4">
-                {formData.messages.map(
-                  (message, index) =>
-                    message.role !== 'system' && (
-                      <div
-                        key={index}
-                        className={`mb-4 p-4 rounded-lg ${
-                          message.role === 'user' ? 'bg-muted ml-12' : 'bg-primary/10 mr-12'
-                        }`}
-                      >
-                        <div className="font-semibold mb-2">
-                          {message.role === 'user' ? 'User' : 'Assistant'}
+          <TabsContent value="chat">
+            <Card>
+              <CardContent className="p-4">
+                <ScrollArea className="h-[400px] mb-4">
+                  {formData.messages.map(
+                    (message, index) =>
+                      message.role !== 'system' && (
+                        <div
+                          key={index}
+                          className={`mb-4 p-4 rounded-lg ${
+                            message.role === 'user' ? 'bg-muted ml-12' : 'bg-primary/10 mr-12'
+                          }`}
+                        >
+                          <div className="font-semibold mb-2">
+                            {message.role === 'user' ? 'User' : 'Assistant'}
+                          </div>
+                          <div className="whitespace-pre-wrap">{message.content}</div>
                         </div>
-                        <div className="whitespace-pre-wrap">{message.content}</div>
-                      </div>
-                    )
-                )}
-              </ScrollArea>
-
-              <div className="flex flex-col space-y-4">
-                <Textarea
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  rows={4}
-                />
-                <div className="flex justify-between items-center">
-                  <Select
-                    value={isUserMessage ? 'user' : 'assistant'}
-                    onValueChange={(value) => setIsUserMessage(value === 'user')}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select message type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">User Message</SelectItem>
-                      <SelectItem value="assistant">Assistant Message</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button type="button" onClick={handleAddMessage}>
-                    Add Message
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="edit">
-          <ScrollArea className="h-[600px]">
-            {formData.messages.map((message, index) => (
-              <div key={index} className="mb-6">
-                <div className="flex justify-between items-center mb-2">
-                  <Label>
-                    {message.role.charAt(0).toUpperCase() + message.role.slice(1)} Message
-                  </Label>
-                  {message.role !== 'system' && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteMessage(index)}
-                    >
-                      Delete
-                    </Button>
+                      )
                   )}
+                </ScrollArea>
+
+                <div className="flex flex-col space-y-4">
+                  <Textarea
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    rows={4}
+                  />
+                  <div className="flex justify-between items-center">
+                    <Select
+                      value={isUserMessage ? 'user' : 'assistant'}
+                      onValueChange={(value) => setIsUserMessage(value === 'user')}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select message type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User Message</SelectItem>
+                        <SelectItem value="assistant">Assistant Message</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" onClick={handleAddMessage}>
+                      Add Message
+                    </Button>
+                  </div>
                 </div>
-                <Textarea
-                  value={message.content}
-                  onChange={(e) => handleEditMessage(index, e.target.value)}
-                  rows={8}
-                  className={message.role === 'system' ? 'bg-muted' : ''}
-                  readOnly={message.role === 'system'}
-                />
-              </div>
-            ))}
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      {success && (
-        <Alert>
-          <AlertTitle>Success</AlertTitle>
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
+          <TabsContent value="edit">
+            <ScrollArea className="h-[600px]">
+              {formData.messages.map((message, index) => (
+                <div key={index} className="mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <Label>
+                      {message.role.charAt(0).toUpperCase() + message.role.slice(1)} Message
+                    </Label>
+                    {message.role !== 'system' && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteMessage(index)}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                  <Textarea
+                    value={message.content}
+                    onChange={(e) => handleEditMessage(index, e.target.value)}
+                    rows={8}
+                    className={message.role === 'system' ? 'bg-muted' : ''}
+                    readOnly={message.role === 'system'}
+                  />
+                </div>
+              ))}
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
 
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Saving...' : 'Save Fine-Tuning Data'}
-      </Button>
-    </form>
+        {error && (
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Saving...' : 'Save Fine-Tuning Data'}
+        </Button>
+      </form>
+
+      <Modal isOpen={isSuccessModalOpen} onClose={() => setIsSuccessModalOpen(false)}>
+        <ModalHeader>Success</ModalHeader>
+        <ModalBody>
+          <p>{success}</p>
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={() => setIsSuccessModalOpen(false)}>Close</Button>
+        </ModalFooter>
+      </Modal>
+    </>
   );
 }
