@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { log } from 'console';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -19,7 +20,6 @@ export async function POST(request: Request) {
     const data = await request.json() as FormData;
     const { style, messages } = data;
 
-    // Basic validation
     if (!style || !['Minimalist', 'Modern', 'Creative'].includes(style)) {
       return NextResponse.json(
         { message: 'Invalid data structure: Missing or invalid style field.' },
@@ -55,12 +55,10 @@ export async function POST(request: Request) {
     const dataDir = path.join(process.cwd(), 'data');
     const dataFilePath = path.join(dataDir, 'fine-tuning-data.jsonl');
 
-    // Create the data directory if it doesn't exist
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    // Append new data to the JSONL file
     const jsonlString = JSON.stringify(jsonlData) + '\n';
     fs.appendFileSync(dataFilePath, jsonlString);
 
