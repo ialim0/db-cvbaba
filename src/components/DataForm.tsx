@@ -32,20 +32,16 @@ interface FormData {
   style: ResumeStyle;
 }
 
-// Helper function to generate system messages based on style
 const getSystemMessageForStyle = (style: ResumeStyle): string => {
-  // Define the allowed styles with proper key typing
   const styles: Record<Exclude<ResumeStyle, ''>, string> = {
     Minimalist: `You are a LaTeX resume template generator. Provide only the complete LaTeX code without any explanations, comments, or markdown formatting. The output should be pure LaTeX that can be directly compiled. Generate a minimalist template with clean layouts, essential information, and efficient use of white space. Avoid decorative elements and keep the design straightforward.`,
     Modern: `You are a LaTeX resume template generator. Provide only the complete LaTeX code without any explanations, comments, or markdown formatting. The output should be pure LaTeX that can be directly compiled. Generate a modern template with subtle design elements, professional typography, and balanced white space. Include contemporary formatting while maintaining readability.`,
     Creative: `You are a LaTeX resume template generator. Provide only the complete LaTeX code without any explanations, comments, or markdown formatting. The output should be pure LaTeX that can be directly compiled. Generate a creative template with unique layouts that stand out while maintaining professionalism. Use innovative formatting, thoughtful typography, and creative section arrangements.`,
   };
 
-  // Use a default fallback for invalid styles
   return styles[style as keyof typeof styles] || `You are a LaTeX resume template generator. Provide only the complete LaTeX code without any explanations, comments, or markdown formatting. The output should be pure LaTeX that can be directly compiled.`;
 };
 
-// Helper function to generate user message content
 const generateUserMessageContent = (style: ResumeStyle): string => `
 Task: Generate a LaTeX resume template
 Style: ${style}
@@ -70,7 +66,6 @@ Skills:
 Python, TypeScript, React, Node.js, Docker, Kubernetes
 `;
 
-// Initial form data
 const initialFormData: FormData = {
   style: 'Minimalist',
   messages: [
@@ -89,7 +84,6 @@ const DataForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  // Handle style change
   const handleStyleChange = (value: string) => {
     const style = value as ResumeStyle;
     setFormData((prev) => ({
@@ -104,7 +98,6 @@ const DataForm: React.FC = () => {
     }));
   };
 
-  // Add new message to chat
   const handleAddMessage = () => {
     if (!newMessage.trim()) return;
     const newMessageObj: Message = {
@@ -117,8 +110,6 @@ const DataForm: React.FC = () => {
     }));
     setNewMessage('');
   };
-
-  // Submit the form
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
