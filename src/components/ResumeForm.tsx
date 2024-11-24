@@ -13,21 +13,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  Tabs,
-  TabsContent,
-  TabsTrigger,
-  TabsList,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
-
-// Optional: If you want syntax highlighting, uncomment the following lines and install react-syntax-highlighter
-// import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
-// import latex from 'react-syntax-highlighter/dist/cjs/languages/hljs/latex';
-// import { docco } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
-// SyntaxHighlighter.registerLanguage('latex', latex);
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from '@/components/ui/modal';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -40,32 +34,40 @@ interface FormData {
 }
 
 // Function to generate system message based on style
-const getSystemMessageForStyle = (style: FormData['style']) => {
-  const baseMessage = `
-You are a LaTeX resume template generator. Your task is to generate a complete LaTeX resume template. The output must:
-1. Be ATS-compliant:
-   - Avoid graphical elements like tables or images that hinder parsing.
-   - Ensure clear text-based formatting.
-2. Be directly compilable without errors.
-3. Exclude explanations, comments, or markdown formatting.`;
-
-  const styleDetails: Record<FormData['style'], string> = {
-    Minimalist: `
-Generate a minimalist resume template with clean layouts, essential sections, and efficient use of white space. Avoid decorative elements.`,
-    Modern: `
-Create a modern resume template with professional typography, subtle design elements, and balanced white space while maintaining readability.`,
-    Creative: `
-Design a creative resume template with unique layouts and thoughtful typography, balancing originality with ATS compliance.`,
+const getSystemMessageForStyle = (style: FormData['style']): string => {
+  const styleDescriptions: Record<FormData['style'], string> = {
+    Minimalist:
+      "Produce a minimalist design focusing on clean layouts and essential information, using space efficiently without any decorative elements.",
+    Modern:
+      "Create a modern design with professional typography and subtle design elements that ensure readability and aesthetic balance.",
+    Creative:
+      "Design a unique, creative layout with innovative typography and design elements, while keeping the format ATS-friendly.",
   };
 
-  return `${baseMessage}${styleDetails[style]}`;
+  const baseMessage = `As an AI language model, your task is to generate a high-quality LaTeX resume template. Please adhere to the following guidelines:
+
+1. **ATS Compliance**: Ensure the resume is Applicant Tracking System (ATS) friendly by avoiding images, tables, and complex graphics. Use simple text and standard formatting.
+
+2. **Error-Free Compilation**: The LaTeX code must compile successfully without any errors or warnings. Validate the code before submission.
+
+3. **Professional Formatting**: Maintain consistent indentation and formatting. Use standard LaTeX commands and environments appropriately.
+
+4. **Style Specifications**: For the '${style}' style, follow these guidelines:
+${styleDescriptions[style]}
+
+5. **Output Instructions**: Provide only the complete LaTeX document, enclosed between '\\documentclass{}' and '\\end{document}'. Do not include any additional explanations, comments, or text outside the LaTeX code.
+
+`;
+
+  return baseMessage;
 };
 
-// Function to generate user message content based on style
+// Function to generate user message content
 const generateUserMessageContent = (style: FormData['style']) => `
-Task: Generate a LaTeX resume template
+Task: Generate a high-quality LaTeX resume template
 Style: ${style}
 Page Limit: 1
+Output: Provide only the complete LaTeX code, ready for compilation.
 
 User Profile:
 Name: John Doe
@@ -97,9 +99,10 @@ const getAssistantMessageForStyle = (style: FormData['style']) => {
 \\usepackage[scale=0.75]{geometry}
 \\usepackage{hyperref}
 \\name{John}{Doe}
-\\email{john@example.com}
+\\title{Senior Software Engineer}
 \\phone[mobile]{123-456-7890}
-\\social[linkedin]{johndoe}
+\\email{john@example.com}
+\\social[linkedin]{linkedin.com/in/johndoe}
 \\begin{document}
 \\makecvtitle
 \\section{Summary}
@@ -107,8 +110,8 @@ Senior Software Engineer with 7+ years of experience in full-stack development.
 \\section{Experience}
 \\cventry{2020--Present}{Senior Software Engineer}{Tech Innovations Inc.}{}{}{
   \\begin{itemize}
-    \\item Led development of scalable microservices architecture
-    \\item Reduced system latency by 40\\% through optimized algorithms
+    \\item Led development of scalable microservices architecture.
+    \\item Reduced system latency by 40\\% through optimized algorithms.
   \\end{itemize}
 }
 \\section{Education}
@@ -124,9 +127,10 @@ Senior Software Engineer with 7+ years of experience in full-stack development.
 \\usepackage[scale=0.85]{geometry}
 \\usepackage{hyperref}
 \\name{John}{Doe}
-\\email{john@example.com}
+\\title{Senior Software Engineer}
 \\phone[mobile]{123-456-7890}
-\\social[linkedin]{johndoe}
+\\email{john@example.com}
+\\social[linkedin]{linkedin.com/in/johndoe}
 \\begin{document}
 \\makecvtitle
 \\section{Summary}
@@ -134,8 +138,8 @@ Senior Software Engineer with 7+ years of experience in full-stack development.
 \\section{Experience}
 \\cventry{2020--Present}{Senior Software Engineer}{Tech Innovations Inc.}{}{}{
   \\begin{itemize}
-    \\item Led development of scalable microservices architecture
-    \\item Reduced system latency by 40\\% through optimized algorithms
+    \\item Led development of scalable microservices architecture.
+    \\item Reduced system latency by 40\\% through optimized algorithms.
   \\end{itemize}
 }
 \\section{Education}
@@ -151,9 +155,10 @@ Senior Software Engineer with 7+ years of experience in full-stack development.
 \\usepackage[scale=0.8]{geometry}
 \\usepackage{hyperref}
 \\name{John}{Doe}
-\\email{john@example.com}
+\\title{Senior Software Engineer}
 \\phone[mobile]{123-456-7890}
-\\social[linkedin]{johndoe}
+\\email{john@example.com}
+\\social[linkedin]{linkedin.com/in/johndoe}
 \\begin{document}
 \\makecvtitle
 \\section{Summary}
@@ -161,8 +166,8 @@ Senior Software Engineer with 7+ years of experience in full-stack development.
 \\section{Experience}
 \\cventry{2020--Present}{Senior Software Engineer}{Tech Innovations Inc.}{}{}{
   \\begin{itemize}
-    \\item Led development of scalable microservices architecture
-    \\item Reduced system latency by 40\\% through optimized algorithms
+    \\item Led development of scalable microservices architecture.
+    \\item Reduced system latency by 40\\% through optimized algorithms.
   \\end{itemize}
 }
 \\section{Education}
@@ -207,7 +212,7 @@ export default function ResumeForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  // Wrapper handler for tab changes to ensure type safety
+  // Handle tab changes
   const handleTabChange = (value: string) => {
     if (value === 'chat' || value === 'edit') {
       setActiveTab(value);
@@ -216,7 +221,7 @@ export default function ResumeForm() {
     }
   };
 
-  // Update system, user, and assistant messages based on style
+  // Update messages based on selected style
   const handleStyleChange = (value: string) => {
     const newStyle = value as FormData['style'];
     setFormData((prev) => {
@@ -241,7 +246,7 @@ export default function ResumeForm() {
     });
   };
 
-  // Handle initiating a new chat with default style
+  // Start a new chat with default style
   const handleNewChat = () => {
     const style = 'Minimalist';
     setFormData({
@@ -264,7 +269,7 @@ export default function ResumeForm() {
     setActiveTab('chat');
   };
 
-  // Handle adding a new message
+  // Add a new message
   const handleAddMessage = () => {
     if (!newMessage.trim()) return;
 
@@ -282,7 +287,7 @@ export default function ResumeForm() {
     setNewMessage('');
   };
 
-  // Handle editing an existing message
+  // Edit an existing message
   const handleEditMessage = (index: number, content: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -292,7 +297,7 @@ export default function ResumeForm() {
     }));
   };
 
-  // Handle deleting a message
+  // Delete a message
   const handleDeleteMessage = (index: number) => {
     setFormData((prev) => ({
       ...prev,
@@ -312,7 +317,6 @@ export default function ResumeForm() {
         throw new Error('Please select a resume style.');
       }
 
-      // Ensure there's at least one user message and one assistant message
       const hasUserMessage = formData.messages.some(
         (msg) => msg.role === 'user'
       );
@@ -328,9 +332,7 @@ export default function ResumeForm() {
 
       const response = await fetch('/api/dg', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
@@ -405,7 +407,6 @@ export default function ResumeForm() {
                             {message.role === 'user' ? 'User' : 'Assistant'}
                           </div>
                           {message.role === 'assistant' ? (
-                       
                             <pre className="bg-gray-100 p-2 rounded overflow-x-auto">
                               <code className="font-mono whitespace-pre-wrap">
                                 {message.content}
