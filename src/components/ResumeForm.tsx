@@ -33,41 +33,20 @@ interface FormData {
   style: 'Minimalist' | 'Modern' | 'Creative';
 }
 
-// Function to generate system message based on style
 const getSystemMessageForStyle = (style: FormData['style']): string => {
   const styleDescriptions: Record<FormData['style'], string> = {
-    Minimalist:
-      "Produce a minimalist design focusing on clean layouts and essential information, using space efficiently without any decorative elements.",
-    Modern:
-      "Create a modern design with professional typography and subtle design elements that ensure readability and aesthetic balance.",
-    Creative:
-      "Design a unique, creative layout with innovative typography and design elements, while keeping the format ATS-friendly.",
+    Minimalist: "Use clean, efficient layouts focusing on essential information without decorative elements.",
+    Modern: "Incorporate professional typography and subtle design elements for readability and aesthetic balance.",
+    Creative: "Design an innovative layout with unique typography while keeping it ATS-friendly.",
   };
 
-  const baseMessage = `As an AI language model, your task is to generate a high-quality LaTeX resume template. Please adhere to the following guidelines:
-
-1. **ATS Compliance**: Ensure the resume is Applicant Tracking System (ATS) friendly by avoiding images, tables, and complex graphics. Use simple text and standard formatting.
-
-2. **Error-Free Compilation**: The LaTeX code must compile successfully without any errors or warnings. Validate the code before submission.
-
-3. **Professional Formatting**: Maintain consistent indentation and formatting. Use standard LaTeX commands and environments appropriately.
-
-4. **Style Specifications**: For the '${style}' style, follow these guidelines:
-${styleDescriptions[style]}
-
-5. **Output Instructions**: Provide only the complete LaTeX document, enclosed between '\\documentclass{}' and '\\end{document}'. Do not include any additional explanations, comments, or text outside the LaTeX code.
-
-`;
-
-  return baseMessage;
+  return `Generate a high-quality, ATS-compliant LaTeX resume in '${style}' style. Ensure error-free compilation and professional formatting. Style guidelines: ${styleDescriptions[style]}`;
 };
 
-// Function to generate user message content
 const generateUserMessageContent = (style: FormData['style']) => `
-Task: Generate a high-quality LaTeX resume template
+Task: Create a LaTeX resume
 Style: ${style}
-Page Limit: 1
-Output: Provide only the complete LaTeX code, ready for compilation.
+Output: Only provide the complete LaTeX code, ready for compilation.
 
 User Profile:
 Name: John Doe
@@ -90,11 +69,7 @@ Python, TypeScript, React, Node.js, Docker, Kubernetes
 
 // Function to generate assistant message based on style
 const getAssistantMessageForStyle = (style: FormData['style']) => {
-  switch (style) {
-    case 'Minimalist':
-      return `\\documentclass[11pt,a4paper]{moderncv}
-\\moderncvstyle{classic}
-\\moderncvcolor{blue}
+  const commonHeader = `\\documentclass[11pt,a4paper]{moderncv}
 \\usepackage[utf8]{inputenc}
 \\usepackage[scale=0.75]{geometry}
 \\usepackage{hyperref}
@@ -104,7 +79,9 @@ const getAssistantMessageForStyle = (style: FormData['style']) => {
 \\email{john@example.com}
 \\social[linkedin]{linkedin.com/in/johndoe}
 \\begin{document}
-\\makecvtitle
+\\makecvtitle`;
+
+  const commonBody = `
 \\section{Summary}
 Senior Software Engineer with 7+ years of experience in full-stack development.
 \\section{Experience}
@@ -119,65 +96,30 @@ Senior Software Engineer with 7+ years of experience in full-stack development.
 \\section{Skills}
 \\cvitem{}{Python, TypeScript, React, Node.js, Docker, Kubernetes}
 \\end{document}`;
+
+  let styleSpecific: string;
+
+  switch (style) {
+    case 'Minimalist':
+      styleSpecific = `
+\\moderncvstyle{classic}
+\\moderncvcolor{blue}`;
+      break;
     case 'Modern':
-      return `\\documentclass[11pt,a4paper]{moderncv}
+      styleSpecific = `
 \\moderncvstyle{banking}
-\\moderncvcolor{green}
-\\usepackage[utf8]{inputenc}
-\\usepackage[scale=0.85]{geometry}
-\\usepackage{hyperref}
-\\name{John}{Doe}
-\\title{Senior Software Engineer}
-\\phone[mobile]{123-456-7890}
-\\email{john@example.com}
-\\social[linkedin]{linkedin.com/in/johndoe}
-\\begin{document}
-\\makecvtitle
-\\section{Summary}
-Senior Software Engineer with 7+ years of experience in full-stack development.
-\\section{Experience}
-\\cventry{2020--Present}{Senior Software Engineer}{Tech Innovations Inc.}{}{}{
-  \\begin{itemize}
-    \\item Led development of scalable microservices architecture.
-    \\item Reduced system latency by 40\\% through optimized algorithms.
-  \\end{itemize}
-}
-\\section{Education}
-\\cventry{2019}{M.S. Computer Science}{Stanford University}{}{}
-\\section{Skills}
-\\cvitem{}{Python, TypeScript, React, Node.js, Docker, Kubernetes}
-\\end{document}`;
+\\moderncvcolor{green}`;
+      break;
     case 'Creative':
-      return `\\documentclass[11pt,a4paper]{moderncv}
+      styleSpecific = `
 \\moderncvstyle{casual}
-\\moderncvcolor{orange}
-\\usepackage[utf8]{inputenc}
-\\usepackage[scale=0.8]{geometry}
-\\usepackage{hyperref}
-\\name{John}{Doe}
-\\title{Senior Software Engineer}
-\\phone[mobile]{123-456-7890}
-\\email{john@example.com}
-\\social[linkedin]{linkedin.com/in/johndoe}
-\\begin{document}
-\\makecvtitle
-\\section{Summary}
-Senior Software Engineer with 7+ years of experience in full-stack development.
-\\section{Experience}
-\\cventry{2020--Present}{Senior Software Engineer}{Tech Innovations Inc.}{}{}{
-  \\begin{itemize}
-    \\item Led development of scalable microservices architecture.
-    \\item Reduced system latency by 40\\% through optimized algorithms.
-  \\end{itemize}
-}
-\\section{Education}
-\\cventry{2019}{M.S. Computer Science}{Stanford University}{}{}
-\\section{Skills}
-\\cvitem{}{Python, TypeScript, React, Node.js, Docker, Kubernetes}
-\\end{document}`;
+\\moderncvcolor{orange}`;
+      break;
     default:
-      return '';
+      styleSpecific = '';
   }
+
+  return `${commonHeader}${styleSpecific}${commonBody}`;
 };
 
 // Initial style
@@ -480,7 +422,9 @@ export default function ResumeForm() {
                   </div>
                   <Textarea
                     value={message.content}
-                    onChange={(e) => handleEditMessage(index, e.target.value)}
+                    onChange={(e) =>
+                      handleEditMessage(index, e.target.value)
+                    }
                     rows={8}
                     className={message.role === 'system' ? 'bg-muted' : ''}
                     readOnly={message.role === 'system'}
