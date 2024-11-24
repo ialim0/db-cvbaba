@@ -5,12 +5,29 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsTrigger, TabsList } from '@/components/ui/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsTrigger,
+  TabsList,
+} from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal'; 
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
+
+// Optional: If you want syntax highlighting, uncomment the following lines and install react-syntax-highlighter
+// import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+// import latex from 'react-syntax-highlighter/dist/cjs/languages/hljs/latex';
+// import { docco } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+// SyntaxHighlighter.registerLanguage('latex', latex);
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -19,24 +36,32 @@ interface Message {
 
 interface FormData {
   messages: Message[];
-  style?: 'Minimalist' | 'Modern' | 'Creative' | '';
+  style: 'Minimalist' | 'Modern' | 'Creative';
 }
 
+// Function to generate system message based on style
 const getSystemMessageForStyle = (style: FormData['style']) => {
-  const baseMessage = 'You are a LaTeX resume template generator. Provide only the complete LaTeX code without any explanations, comments, or markdown formatting. The output should be pure LaTeX that can be directly compiled.';
-  
-  switch (style) {
-    case 'Minimalist':
-      return `${baseMessage} Generate a minimalist template with clean layouts, essential information, and efficient use of white space. Avoid decorative elements and keep the design straightforward.`;
-    case 'Modern':
-      return `${baseMessage} Generate a modern template with subtle design elements, professional typography, and balanced white space. Include contemporary formatting while maintaining readability.`;
-    case 'Creative':
-      return `${baseMessage} Generate a creative template with unique layouts that stand out while maintaining professionalism. Use innovative formatting, thoughtful typography, and creative section arrangements.`;
-    default:
-      return baseMessage;
-  }
+  const baseMessage = `
+You are a LaTeX resume template generator. Your task is to generate a complete LaTeX resume template. The output must:
+1. Be ATS-compliant:
+   - Avoid graphical elements like tables or images that hinder parsing.
+   - Ensure clear text-based formatting.
+2. Be directly compilable without errors.
+3. Exclude explanations, comments, or markdown formatting.`;
+
+  const styleDetails: Record<FormData['style'], string> = {
+    Minimalist: `
+Generate a minimalist resume template with clean layouts, essential sections, and efficient use of white space. Avoid decorative elements.`,
+    Modern: `
+Create a modern resume template with professional typography, subtle design elements, and balanced white space while maintaining readability.`,
+    Creative: `
+Design a creative resume template with unique layouts and thoughtful typography, balancing originality with ATS compliance.`,
+  };
+
+  return `${baseMessage}${styleDetails[style]}`;
 };
 
+// Function to generate user message content based on style
 const generateUserMessageContent = (style: FormData['style']) => `
 Task: Generate a LaTeX resume template
 Style: ${style}
@@ -61,20 +86,11 @@ Skills:
 Python, TypeScript, React, Node.js, Docker, Kubernetes
 `;
 
-const initialFormData: FormData = {
-  style: 'Minimalist',
-  messages: [
-    {
-      role: 'system',
-      content: getSystemMessageForStyle('Minimalist'),
-    },
-    {
-      role: 'user',
-      content: generateUserMessageContent('Minimalist'),
-    },
-    {
-      role: 'assistant',
-      content: `\\documentclass[11pt,a4paper]{moderncv}
+// Function to generate assistant message based on style
+const getAssistantMessageForStyle = (style: FormData['style']) => {
+  switch (style) {
+    case 'Minimalist':
+      return `\\documentclass[11pt,a4paper]{moderncv}
 \\moderncvstyle{classic}
 \\moderncvcolor{blue}
 \\usepackage[utf8]{inputenc}
@@ -99,7 +115,84 @@ Senior Software Engineer with 7+ years of experience in full-stack development.
 \\cventry{2019}{M.S. Computer Science}{Stanford University}{}{}
 \\section{Skills}
 \\cvitem{}{Python, TypeScript, React, Node.js, Docker, Kubernetes}
-\\end{document}`,
+\\end{document}`;
+    case 'Modern':
+      return `\\documentclass[11pt,a4paper]{moderncv}
+\\moderncvstyle{banking}
+\\moderncvcolor{green}
+\\usepackage[utf8]{inputenc}
+\\usepackage[scale=0.85]{geometry}
+\\usepackage{hyperref}
+\\name{John}{Doe}
+\\email{john@example.com}
+\\phone[mobile]{123-456-7890}
+\\social[linkedin]{johndoe}
+\\begin{document}
+\\makecvtitle
+\\section{Summary}
+Senior Software Engineer with 7+ years of experience in full-stack development.
+\\section{Experience}
+\\cventry{2020--Present}{Senior Software Engineer}{Tech Innovations Inc.}{}{}{
+  \\begin{itemize}
+    \\item Led development of scalable microservices architecture
+    \\item Reduced system latency by 40\\% through optimized algorithms
+  \\end{itemize}
+}
+\\section{Education}
+\\cventry{2019}{M.S. Computer Science}{Stanford University}{}{}
+\\section{Skills}
+\\cvitem{}{Python, TypeScript, React, Node.js, Docker, Kubernetes}
+\\end{document}`;
+    case 'Creative':
+      return `\\documentclass[11pt,a4paper]{moderncv}
+\\moderncvstyle{casual}
+\\moderncvcolor{orange}
+\\usepackage[utf8]{inputenc}
+\\usepackage[scale=0.8]{geometry}
+\\usepackage{hyperref}
+\\name{John}{Doe}
+\\email{john@example.com}
+\\phone[mobile]{123-456-7890}
+\\social[linkedin]{johndoe}
+\\begin{document}
+\\makecvtitle
+\\section{Summary}
+Senior Software Engineer with 7+ years of experience in full-stack development.
+\\section{Experience}
+\\cventry{2020--Present}{Senior Software Engineer}{Tech Innovations Inc.}{}{}{
+  \\begin{itemize}
+    \\item Led development of scalable microservices architecture
+    \\item Reduced system latency by 40\\% through optimized algorithms
+  \\end{itemize}
+}
+\\section{Education}
+\\cventry{2019}{M.S. Computer Science}{Stanford University}{}{}
+\\section{Skills}
+\\cvitem{}{Python, TypeScript, React, Node.js, Docker, Kubernetes}
+\\end{document}`;
+    default:
+      return '';
+  }
+};
+
+// Initial style
+const initialStyle: FormData['style'] = 'Minimalist';
+
+// Initial form data with system, user, and assistant messages
+const initialFormData: FormData = {
+  style: initialStyle,
+  messages: [
+    {
+      role: 'system',
+      content: getSystemMessageForStyle(initialStyle),
+    },
+    {
+      role: 'user',
+      content: generateUserMessageContent(initialStyle),
+    },
+    {
+      role: 'assistant',
+      content: getAssistantMessageForStyle(initialStyle),
     },
   ],
 };
@@ -108,22 +201,22 @@ export default function ResumeForm() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'edit'>('chat');
   const [newMessage, setNewMessage] = useState('');
   const [isUserMessage, setIsUserMessage] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  const updateSystemMessage = (style: FormData['style']) => {
-    const newSystemMessage = getSystemMessageForStyle(style);
-    setFormData((prev) => ({
-      ...prev,
-      messages: prev.messages.map((msg) =>
-        msg.role === 'system' ? { ...msg, content: newSystemMessage } : msg
-      ),
-    }));
+  // Wrapper handler for tab changes to ensure type safety
+  const handleTabChange = (value: string) => {
+    if (value === 'chat' || value === 'edit') {
+      setActiveTab(value);
+    } else {
+      console.warn(`Unhandled tab value: ${value}`);
+    }
   };
 
+  // Update system, user, and assistant messages based on style
   const handleStyleChange = (value: string) => {
     const newStyle = value as FormData['style'];
     setFormData((prev) => {
@@ -133,6 +226,9 @@ export default function ResumeForm() {
         }
         if (msg.role === 'user') {
           return { ...msg, content: generateUserMessageContent(newStyle) };
+        }
+        if (msg.role === 'assistant') {
+          return { ...msg, content: getAssistantMessageForStyle(newStyle) };
         }
         return msg;
       });
@@ -145,6 +241,7 @@ export default function ResumeForm() {
     });
   };
 
+  // Handle initiating a new chat with default style
   const handleNewChat = () => {
     const style = 'Minimalist';
     setFormData({
@@ -158,11 +255,16 @@ export default function ResumeForm() {
           role: 'user',
           content: generateUserMessageContent(style),
         },
+        {
+          role: 'assistant',
+          content: getAssistantMessageForStyle(style),
+        },
       ],
     });
     setActiveTab('chat');
   };
 
+  // Handle adding a new message
   const handleAddMessage = () => {
     if (!newMessage.trim()) return;
 
@@ -180,13 +282,17 @@ export default function ResumeForm() {
     setNewMessage('');
   };
 
+  // Handle editing an existing message
   const handleEditMessage = (index: number, content: string) => {
     setFormData((prev) => ({
       ...prev,
-      messages: prev.messages.map((msg, i) => (i === index ? { ...msg, content } : msg)),
+      messages: prev.messages.map((msg, i) =>
+        i === index ? { ...msg, content } : msg
+      ),
     }));
   };
 
+  // Handle deleting a message
   const handleDeleteMessage = (index: number) => {
     setFormData((prev) => ({
       ...prev,
@@ -194,6 +300,7 @@ export default function ResumeForm() {
     }));
   };
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -205,8 +312,18 @@ export default function ResumeForm() {
         throw new Error('Please select a resume style.');
       }
 
-      if (!formData.messages || formData.messages.length < 2) {
-        throw new Error('At least one user message and one assistant response are required.');
+      // Ensure there's at least one user message and one assistant message
+      const hasUserMessage = formData.messages.some(
+        (msg) => msg.role === 'user'
+      );
+      const hasAssistantMessage = formData.messages.some(
+        (msg) => msg.role === 'assistant'
+      );
+
+      if (!hasUserMessage || !hasAssistantMessage) {
+        throw new Error(
+          'At least one user message and one assistant response are required.'
+        );
       }
 
       const response = await fetch('/api/dg', {
@@ -226,7 +343,9 @@ export default function ResumeForm() {
       }
     } catch (err) {
       console.error('Error:', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setError(
+        err instanceof Error ? err.message : 'An unexpected error occurred'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -235,10 +354,15 @@ export default function ResumeForm() {
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Style Selection and New Chat Button */}
         <div className="flex justify-between items-center">
           <div className="flex-1 mr-4">
             <Label htmlFor="style">Resume Style</Label>
-            <Select onValueChange={handleStyleChange} required value={formData.style}>
+            <Select
+              onValueChange={handleStyleChange}
+              required
+              value={formData.style}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a style" />
               </SelectTrigger>
@@ -254,12 +378,14 @@ export default function ResumeForm() {
           </Button>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        {/* Tabs for Chat and Edit Messages */}
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="edit">Edit Messages</TabsTrigger>
           </TabsList>
 
+          {/* Chat Tab Content */}
           <TabsContent value="chat">
             <Card>
               <CardContent className="p-4">
@@ -270,18 +396,32 @@ export default function ResumeForm() {
                         <div
                           key={index}
                           className={`mb-4 p-4 rounded-lg ${
-                            message.role === 'user' ? 'bg-muted ml-12' : 'bg-primary/10 mr-12'
+                            message.role === 'user'
+                              ? 'bg-muted ml-12'
+                              : 'bg-primary/10 mr-12'
                           }`}
                         >
                           <div className="font-semibold mb-2">
                             {message.role === 'user' ? 'User' : 'Assistant'}
                           </div>
-                          <div className="whitespace-pre-wrap">{message.content}</div>
+                          {message.role === 'assistant' ? (
+                       
+                            <pre className="bg-gray-100 p-2 rounded overflow-x-auto">
+                              <code className="font-mono whitespace-pre-wrap">
+                                {message.content}
+                              </code>
+                            </pre>
+                          ) : (
+                            <div className="whitespace-pre-wrap">
+                              {message.content}
+                            </div>
+                          )}
                         </div>
                       )
                   )}
                 </ScrollArea>
 
+                {/* Add New Message Section */}
                 <div className="flex flex-col space-y-4">
                   <Textarea
                     value={newMessage}
@@ -292,14 +432,18 @@ export default function ResumeForm() {
                   <div className="flex justify-between items-center">
                     <Select
                       value={isUserMessage ? 'user' : 'assistant'}
-                      onValueChange={(value) => setIsUserMessage(value === 'user')}
+                      onValueChange={(value) =>
+                        setIsUserMessage(value === 'user')
+                      }
                     >
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Select message type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="user">User Message</SelectItem>
-                        <SelectItem value="assistant">Assistant Message</SelectItem>
+                        <SelectItem value="assistant">
+                          Assistant Message
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <Button type="button" onClick={handleAddMessage}>
@@ -311,13 +455,16 @@ export default function ResumeForm() {
             </Card>
           </TabsContent>
 
+          {/* Edit Messages Tab Content */}
           <TabsContent value="edit">
             <ScrollArea className="h-[600px]">
               {formData.messages.map((message, index) => (
                 <div key={index} className="mb-6">
                   <div className="flex justify-between items-center mb-2">
                     <Label>
-                      {message.role.charAt(0).toUpperCase() + message.role.slice(1)} Message
+                      {message.role.charAt(0).toUpperCase() +
+                        message.role.slice(1)}{' '}
+                      Message
                     </Label>
                     {message.role !== 'system' && (
                       <Button
@@ -343,6 +490,7 @@ export default function ResumeForm() {
           </TabsContent>
         </Tabs>
 
+        {/* Error Alert */}
         {error && (
           <Alert variant="destructive">
             <AlertTitle>Error</AlertTitle>
@@ -350,12 +498,17 @@ export default function ResumeForm() {
           </Alert>
         )}
 
+        {/* Submit Button */}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : 'Save Fine-Tuning Data'}
         </Button>
       </form>
 
-      <Modal isOpen={isSuccessModalOpen} onClose={() => setIsSuccessModalOpen(false)}>
+      {/* Success Modal */}
+      <Modal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+      >
         <ModalHeader>Success</ModalHeader>
         <ModalBody>
           <p>{success}</p>
