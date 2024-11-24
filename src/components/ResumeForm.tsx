@@ -29,40 +29,78 @@ interface Message {
 }
 
 interface FormData {
+  /** Array of messages in the conversation */
   messages: Message[];
+  
+  /** Visual style preference for the resume */
   style: 'Minimalist' | 'Modern' | 'Creative';
 }
 
-// Function to generate system message based on style
-const getSystemMessageForStyle = (style: FormData['style']): string => {
-  const styleDescriptions: Record<FormData['style'], string> = {
-    Minimalist:
-      "Produce a minimalist design focusing on clean layouts and essential information, using space efficiently without any decorative elements.",
-    Modern:
-      "Create a modern design with professional typography and subtle design elements that ensure readability and aesthetic balance.",
-    Creative:
-      "Design a unique, creative layout with innovative typography and design elements, while keeping the format ATS-friendly.",
-  };
-
-  const baseMessage = `As an AI language model, your task is to generate a high-quality LaTeX resume template. Please adhere to the following guidelines:
-
-1. **ATS Compliance**: Ensure the resume is Applicant Tracking System (ATS) friendly by avoiding images, tables, and complex graphics. Use simple text and standard formatting.
-
-2. **Error-Free Compilation**: The LaTeX code must compile successfully without any errors or warnings. Validate the code before submission.
-
-3. **Professional Formatting**: Maintain consistent indentation and formatting. Use standard LaTeX commands and environments appropriately.
-
-4. **Style Specifications**: For the '${style}' style, follow these guidelines:
-${styleDescriptions[style]}
-
-5. **Output Instructions**: Provide only the complete LaTeX document, enclosed between '\\documentclass{}' and '\\end{document}'. Do not include any additional explanations, comments, or text outside the LaTeX code.
-
-`;
-
-  return baseMessage;
+/**
+ * Style descriptions mapping
+ * Contains detailed guidelines for each resume style
+ */
+const STYLE_DESCRIPTIONS: Record<FormData['style'], string> = {
+  Minimalist: `
+    Produce a minimalist design focusing on:
+    - Clean, uncluttered layouts
+    - Essential information only
+    - Efficient use of white space
+    - No decorative elements
+  `,
+  Modern: `
+    Create a modern design emphasizing:
+    - Professional typography
+    - Subtle design elements
+    - Optimal readability
+    - Balanced aesthetic presentation
+  `,
+  Creative: `
+    Design a unique layout featuring:
+    - Innovative typography
+    - Creative design elements
+    - ATS-friendly formatting
+    - Distinctive visual hierarchy
+  `
 };
 
-// Function to generate user message content
+const getSystemMessageForStyle = (style: FormData['style']): string => {
+  const systemMessage = `
+You will generate a high-quality LaTeX resume template following these requirements:
+
+1. ATS COMPLIANCE
+- Ensure Applicant Tracking System (ATS) compatibility
+- Avoid images, tables, and complex graphics
+- Use simple text formatting
+- Maintain standard section hierarchy
+
+2. TECHNICAL REQUIREMENTS
+- Provide compilable LaTeX code
+- Ensure error-free execution
+- Include all necessary packages
+- Use standard LaTeX environments
+
+3. CODE QUALITY
+- Maintain consistent indentation
+- Follow LaTeX best practices
+- Use semantic markup
+- Include appropriate comments
+
+4. STYLE GUIDELINES
+${STYLE_DESCRIPTIONS[style]}
+
+5. OUTPUT FORMAT
+- Begin with \\documentclass{} declaration
+- End with \\end{document}
+- Include complete, working code only
+- Omit explanatory text
+
+IMPORTANT: Provide only valid LaTeX code. No natural language responses.
+`;
+
+  return systemMessage.trim();
+};
+
 const generateUserMessageContent = (style: FormData['style']) => `
 Task: Generate a high-quality LaTeX resume template
 Style: ${style}
@@ -180,10 +218,8 @@ Senior Software Engineer with 7+ years of experience in full-stack development.
   }
 };
 
-// Initial style
 const initialStyle: FormData['style'] = 'Minimalist';
 
-// Initial form data with system, user, and assistant messages
 const initialFormData: FormData = {
   style: initialStyle,
   messages: [
