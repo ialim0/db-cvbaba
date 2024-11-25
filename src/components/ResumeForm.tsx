@@ -65,39 +65,41 @@ const STYLE_DESCRIPTIONS: Record<FormData['style'], string> = {
 };
 
 const getSystemMessageForStyle = (style: FormData['style']): string => {
-  const systemMessage = `
-You will generate a high-quality LaTeX resume template following these requirements:
+  const systemMessage = `You will generate a high-quality LaTeX resume template following these requirements:
+  1. ATS COMPLIANCE - Ensure Applicant Tracking System (ATS) compatibility
+    - Avoid images, tables, and complex graphics
+    - Use simple text formatting
+    - Maintain standard section hierarchy
 
-1. ATS COMPLIANCE
-- Ensure Applicant Tracking System (ATS) compatibility
-- Avoid images, tables, and complex graphics
-- Use simple text formatting
-- Maintain standard section hierarchy
+  2. TECHNICAL REQUIREMENTS
+    - Provide compilable LaTeX code
+    - Ensure error-free execution
+    - Include all necessary packages
+    - Use standard LaTeX environments
 
-2. TECHNICAL REQUIREMENTS
-- Provide compilable LaTeX code
-- Ensure error-free execution
-- Include all necessary packages
-- Use standard LaTeX environments
+  3. CODE QUALITY
+    - Maintain consistent indentation
+    - Follow LaTeX best practices
+    - Use semantic markup
+    - Include appropriate comments
 
-3. CODE QUALITY
-- Maintain consistent indentation
-- Follow LaTeX best practices
-- Use semantic markup
-- Include appropriate comments
+  4. STYLE GUIDELINES ${STYLE_DESCRIPTIONS[style]}
 
-4. STYLE GUIDELINES
-${STYLE_DESCRIPTIONS[style]}
+  5. EXPERIENCE SECTION STAR METHOD GUIDELINES
+    - When processing experience, enhance the descriptions using the STAR method:
+      STAR Method Examples:
+      - "Optimized customer support workflow, reducing response times by 40%"
+      - "Developed machine learning algorithm increasing prediction accuracy from 75% to 92%"
+      - "Led cross-functional team that streamlined production process, saving $250,000 annually"
 
-5. OUTPUT FORMAT
-- Begin with \\documentclass{} declaration
-- End with \\end{document}
-- Include complete, working code only
-- Omit explanatory text
+  6. OUTPUT FORMAT
+    - Begin with \\documentclass{} declaration
+    - End with \\end{document}
+    - Include complete, working code only
+    - Omit explanatory text
 
-IMPORTANT: Provide only valid LaTeX code. No natural language responses.
-`;
-
+  IMPORTANT: Provide only valid LaTeX code. No natural language responses.`;
+  
   return systemMessage.trim();
 };
 
