@@ -29,17 +29,12 @@ interface Message {
 }
 
 interface FormData {
-  /** Array of messages in the conversation */
   messages: Message[];
   
-  /** Visual style preference for the resume */
   style: 'Minimalist' | 'Modern' | 'Creative';
 }
 
-/**
- * Style descriptions mapping
- * Contains detailed guidelines for each resume style
- */
+
 const STYLE_DESCRIPTIONS: Record<FormData['style'], string> = {
   Minimalist: `
     Produce a minimalist design focusing on:
@@ -65,43 +60,53 @@ const STYLE_DESCRIPTIONS: Record<FormData['style'], string> = {
 };
 
 const getSystemMessageForStyle = (style: FormData['style']): string => {
-  const systemMessage = `You will generate a high-quality LaTeX resume template following these requirements:
-  1. ATS COMPLIANCE - Ensure Applicant Tracking System (ATS) compatibility
-    - Avoid images, tables, and complex graphics
-    - Use simple text formatting
-    - Maintain standard section hierarchy
+  const systemMessage = `
+You will generate a high-quality LaTeX resume template following these requirements:
 
-  2. TECHNICAL REQUIREMENTS
-    - Provide compilable LaTeX code
-    - Ensure error-free execution
-    - Include all necessary packages
-    - Use standard LaTeX environments
+1. ATS COMPLIANCE
+   - Ensure Applicant Tracking System (ATS) compatibility
+   - Avoid images, tables, and complex graphics
+   - Use simple text formatting
+   - Maintain standard section hierarchy
 
-  3. CODE QUALITY
-    - Maintain consistent indentation
-    - Follow LaTeX best practices
-    - Use semantic markup
-    - Include appropriate comments
+2. TECHNICAL REQUIREMENTS
+   - Provide compilable LaTeX code
+   - Ensure error-free execution
+   - Include all necessary packages
+   - Use standard LaTeX environments
 
-  4. STYLE GUIDELINES ${STYLE_DESCRIPTIONS[style]}
+3. CODE QUALITY
+   - Maintain consistent indentation
+   - Follow LaTeX best practices
+   - Use semantic markup
+   - Include appropriate comments
 
-  5. EXPERIENCE SECTION STAR METHOD GUIDELINES
-    - When processing experience, enhance the descriptions using the STAR method:
-      STAR Method Examples:
-      - "Optimized customer support workflow, reducing response times by 40%"
-      - "Developed machine learning algorithm increasing prediction accuracy from 75% to 92%"
-      - "Led cross-functional team that streamlined production process, saving $250,000 annually"
+5. EXPERIENCE ENHANCEMENT
+   - When processing experience, enhance the descriptions using the STAR method:
+     - **Situation:** Provide context for the role or project.
+     - **Task:** Outline the specific responsibilities or challenges faced.
+     - **Action:** Describe the actions taken to address the task.
+     - **Result:** Highlight the outcomes or achievements resulting from those actions.
+   -STAR Method Examples:
+     - "Optimized customer support workflow, reducing response times by 40%"
+     - "Developed machine learning algorithm increasing prediction accuracy from 75% to 92%"
+     - "Led cross-functional team that streamlined production process, saving $250,000 annually     
 
-  6. OUTPUT FORMAT
-    - Begin with \\documentclass{} declaration
-    - End with \\end{document}
-    - Include complete, working code only
-    - Omit explanatory text
+5. STYLE GUIDELINES
+   ${STYLE_DESCRIPTIONS[style]}
 
-  IMPORTANT: Provide only valid LaTeX code. No natural language responses.`;
-  
+6. OUTPUT FORMAT
+   - Begin with \\documentclass{} declaration
+   - End with \\end{document}
+   - Include complete, working code only
+   - Omit explanatory text
+
+IMPORTANT: Provide only valid LaTeX code. No natural language responses.`;
+
   return systemMessage.trim();
 };
+
+
 
 const generateUserMessageContent = (style: FormData['style']) => `
 Task: Generate a high-quality LaTeX resume template
