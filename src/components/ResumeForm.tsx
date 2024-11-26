@@ -61,7 +61,7 @@ const STYLE_DESCRIPTIONS: Record<FormData['style'], string> = {
 
 const getSystemMessageForStyle = (style: FormData['style']): string => {
   const systemMessage = `
-You will generate a high-quality LaTeX resume template following these requirements:
+Leveraging a standard LaTeX package, create a professional resume template tailored to the following guidelines:
 
 1. ATS COMPLIANCE
    - Ensure Applicant Tracking System (ATS) compatibility
@@ -81,16 +81,18 @@ You will generate a high-quality LaTeX resume template following these requireme
    - Use semantic markup
    - Include appropriate comments
 
-5. EXPERIENCE ENHANCEMENT
-   - When processing experience, enhance the descriptions using the STAR method:
-     - **Situation:** Provide context for the role or project.
-     - **Task:** Outline the specific responsibilities or challenges faced.
-     - **Action:** Describe the actions taken to address the task.
-     - **Result:** Highlight the outcomes or achievements resulting from those actions.
-   -STAR Method Examples:
-     - "Optimized customer support workflow, reducing response times by 40%"
-     - "Developed machine learning algorithm increasing prediction accuracy from 75% to 92%"
-     - "Led cross-functional team that streamlined production process, saving $250,000 annually     
+4. EXPERIENCE ENHANCEMENT
+   Use the following structure for each experience description: "Accomplished [X] as measured by [Y], by doing [Z]."
+   
+      Key Principles:
+      - Stay truthful and objective
+      - Use active voice
+      - Write clearly and directly
+      - Ensure proper grammar
+
+      Example:
+      Before: "Managed social media accounts"
+      After: "Accomplished 50% growth as measured by 10K new followers, by implementing targeted campaigns"
 
 5. STYLE GUIDELINES
    ${STYLE_DESCRIPTIONS[style]}
@@ -101,10 +103,12 @@ You will generate a high-quality LaTeX resume template following these requireme
    - Include complete, working code only
    - Omit explanatory text
 
-IMPORTANT: Provide only valid LaTeX code. No natural language responses.`;
+IMPORTANT: Provide only valid LaTeX code. No natural language responses.
+`;
 
   return systemMessage.trim();
 };
+
 
 
 
